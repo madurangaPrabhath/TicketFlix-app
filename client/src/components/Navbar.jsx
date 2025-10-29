@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Film, Menu, X, Search, User, LogOut } from 'lucide-react';
+import { useClerk, useUser } from '@clerk/clerk-react';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -8,8 +9,8 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   
-  const isLoggedIn = false; 
-  const user = null;
+  const { user, isSignedIn } = useUser();
+  const { openSignIn, signOut } = useClerk();
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -25,8 +26,9 @@ const Navbar = () => {
     window.scrollTo(0, 0);
   };
 
-  const handleLogout = () => {
-    console.log('Logout clicked');
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
   };
 
   return (
@@ -116,26 +118,27 @@ const Navbar = () => {
             </button>
           </div>
 
-          {isLoggedIn ? (
+          {isSignedIn ? (
             <div className="hidden md:flex items-center gap-3">
               <button className="flex items-center gap-2 bg-white/10 border-none text-white px-4 py-2 rounded-full cursor-pointer text-sm font-medium transition-all duration-300 hover:bg-white/15">
                 <User size={20} />
-                <span>{user?.name || 'Profile'}</span>
+                <span>{user?.fullName || user?.firstName || 'Profile'}</span>
               </button>
               <button 
                 className="bg-transparent border-none text-gray-400 cursor-pointer p-2 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-white/10 hover:text-white"
                 onClick={handleLogout}
+                title="Logout"
               >
                 <LogOut size={20} />
               </button>
             </div>
           ) : (
-            <Link 
-              to="/login" 
-              className="hidden md:inline-block bg-red-600 text-white px-6 py-2.5 rounded-md text-[15px] font-semibold no-underline transition-all duration-300 hover:bg-red-500 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(229,9,20,0.4)]"
+            <button 
+              onClick={() => openSignIn()}
+              className="hidden md:inline-block bg-red-600 text-white px-6 py-2.5 rounded-md text-[15px] font-semibold transition-all duration-300 hover:bg-red-500 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(229,9,20,0.4)] cursor-pointer border-none"
             >
               Login
-            </Link>
+            </button>
           )}
 
           <button
@@ -147,7 +150,7 @@ const Navbar = () => {
           </button>
         </div>
 
-        <div className={`fixed top-0 ${isMenuOpen ? 'right-0' : '-right-full'} w-[280px] h-screen from-neutral-900 to-black shadow-[-5px_0_20px_rgba(0,0,0,0.5)] pt-20 px-6 pb-6 transition-all duration-300 z-1001 overflow-y-auto`}>
+        <div className={`fixed top-0 ${isMenuOpen ? 'right-0' : '-right-full'} w-[280px] h-screen bg-linear-to-b from-neutral-900 to-black shadow-[-5px_0_20px_rgba(0,0,0,0.5)] pt-20 px-6 pb-6 transition-all duration-300 z-1001 overflow-y-auto`}>
           <button
             className="absolute top-5 right-5 bg-transparent border-none text-white cursor-pointer p-2"
             onClick={() => setIsMenuOpen(false)}
@@ -212,7 +215,7 @@ const Navbar = () => {
           </ul>
 
           <div className="border-t border-neutral-800 pt-6 flex flex-col gap-3">
-            {isLoggedIn ? (
+            {isSignedIn ? (
               <>
                 <Link 
                   to="/profile" 
@@ -220,7 +223,7 @@ const Navbar = () => {
                   onClick={handleLinkClick}
                 >
                   <User size={20} />
-                  <span>{user?.name || 'My Profile'}</span>
+                  <span>{user?.fullName || user?.firstName || 'My Profile'}</span>
                 </Link>
                 <button 
                   className="flex items-center justify-center gap-3 bg-transparent border-2 border-neutral-800 text-gray-400 py-3.5 px-4 rounded-lg text-base font-medium cursor-pointer transition-all duration-300 hover:border-red-600 hover:text-red-600"
@@ -231,13 +234,15 @@ const Navbar = () => {
                 </button>
               </>
             ) : (
-              <Link 
-                to="/login" 
-                className="bg-red-600 text-white py-3.5 px-6 rounded-lg text-base font-semibold text-center no-underline transition-all duration-300 hover:bg-red-500"
-                onClick={handleLinkClick}
+              <button 
+                onClick={() => {
+                  openSignIn();
+                  handleLinkClick();
+                }}
+                className="bg-red-600 text-white py-3.5 px-6 rounded-lg text-base font-semibold text-center transition-all duration-300 hover:bg-red-500 cursor-pointer border-none w-full"
               >
                 Login
-              </Link>
+              </button>
             )}
           </div>
         </div>
