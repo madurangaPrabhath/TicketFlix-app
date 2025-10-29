@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { Film, Menu, X, Search, TicketPlus } from 'lucide-react';
 import { useClerk, useUser, UserButton } from '@clerk/clerk-react';
@@ -8,17 +8,38 @@ const Navbar = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const searchRef = useRef(null);
+  const searchButtonRef = useRef(null);
   
   const { user, isSignedIn, isLoaded } = useUser();
   const { openSignIn, signOut } = useClerk();
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        isSearchOpen &&
+        searchRef.current &&
+        !searchRef.current.contains(event.target) &&
+        searchButtonRef.current &&
+        !searchButtonRef.current.contains(event.target)
+      ) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSearchOpen]);
 
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/movies?search=${searchQuery}`);
-      setSearchQuery('');
-      setIsSearchOpen(false);
     }
+    setSearchQuery('');
+    setIsSearchOpen(false);
   };
 
   const handleLinkClick = () => {
@@ -100,7 +121,8 @@ const Navbar = () => {
 
         <div className="flex items-center gap-4 shrink-0">
           <button
-            className="hidden md:flex bg-transparent border-none text-gray-400 cursor-pointer p-2 rounded-full items-center justify-center transition-all duration-300 hover:bg-white/10 hover:text-white"
+            ref={searchButtonRef}
+            className="bg-transparent border-none text-gray-400 cursor-pointer p-2 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-white/10 hover:text-white"
             onClick={() => setIsSearchOpen(!isSearchOpen)}
             aria-label="Search"
           >
@@ -108,15 +130,27 @@ const Navbar = () => {
           </button>
 
           {isSearchOpen && (
-            <form onSubmit={handleSearch} className="hidden md:block absolute right-24 top-1/2 -translate-y-1/2">
-              <input
-                type="text"
-                placeholder="Search movies..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                autoFocus
-                className="w-52 px-3 py-2 bg-transparent border-b-2 border-red-600 text-white text-sm outline-none transition-all duration-300"
-              />
+            <form 
+              ref={searchRef}
+              onSubmit={handleSearch} 
+              className="absolute left-6 right-6 md:left-auto md:right-24 top-1/2 -translate-y-1/2 z-50"
+            >
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search movies..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  autoFocus
+                  className="w-full md:w-64 px-4 py-2.5 md:py-2 bg-neutral-900/95 md:bg-transparent border-2 md:border-0 md:border-b-2 border-red-600 text-white text-sm md:text-base rounded-lg md:rounded-none outline-none transition-all duration-300 backdrop-blur-sm"
+                />
+                <button
+                  type="submit"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-md transition-all duration-300 md:hidden"
+                >
+                  <Search className="w-4 h-4" />
+                </button>
+              </div>
             </form>
           )}
 
@@ -233,6 +267,21 @@ const Navbar = () => {
               </button>
             ) : (
               <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-3 bg-white/5 text-white py-3.5 px-4 rounded-lg">
+                  <UserButton afterSignOutUrl="/">
+                    <UserButton.MenuItems>
+                      <UserButton.Action 
+                        label="My Bookings" 
+                        labelIcon={<TicketPlus width={15} />}
+                        onClick={() => navigate('/booking')}
+                      />
+                    </UserButton.MenuItems>
+                  </UserButton>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold">{user.fullName || user.username}</span>
+                    <span className="text-xs text-gray-400">{user.primaryEmailAddress?.emailAddress}</span>
+                  </div>
+                </div>
                 <Link 
                   to="/booking" 
                   className="flex items-center gap-3 bg-white/5 text-white py-3.5 px-4 rounded-lg text-base font-medium no-underline transition-all duration-300 hover:bg-white/10"
