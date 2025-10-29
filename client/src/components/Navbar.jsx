@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Film, Menu, X, Search, User, LogOut } from 'lucide-react';
-import { useClerk, useUser } from '@clerk/clerk-react';
+import { Film, Menu, X, Search, TicketPlus } from 'lucide-react';
+import { useClerk, useUser, UserButton } from '@clerk/clerk-react';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -9,7 +9,7 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   
-  const { user, isSignedIn } = useUser();
+  const { user, isSignedIn, isLoaded } = useUser();
   const { openSignIn, signOut } = useClerk();
 
   const handleSearch = (e) => {
@@ -27,8 +27,12 @@ const Navbar = () => {
   };
 
   const handleLogout = async () => {
-    await signOut();
-    navigate('/');
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
@@ -95,50 +99,53 @@ const Navbar = () => {
         </ul>
 
         <div className="flex items-center gap-4 shrink-0">
-          <div className="relative flex items-center gap-2">
-            {isSearchOpen && (
-              <form onSubmit={handleSearch} className="absolute right-11 top-1/2 -translate-y-1/2">
-                <input
-                  type="text"
-                  placeholder="Search movies..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  autoFocus
-                  className="w-0 md:w-52 px-3 py-2 bg-transparent border-b-2 border-red-600 text-white text-sm outline-none transition-all duration-300 opacity-0 md:opacity-100"
-                  style={{ width: isSearchOpen ? '200px' : '0', opacity: isSearchOpen ? '1' : '0' }}
-                />
-              </form>
-            )}
-            <button
-              className="bg-transparent border-none text-gray-400 cursor-pointer p-2 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-white/10 hover:text-white"
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
-              aria-label="Search"
-            >
-              {isSearchOpen ? <X size={20} /> : <Search size={20} />}
-            </button>
-          </div>
+          {/* Search Icon - Hidden on Mobile */}
+          <button
+            className="hidden md:flex bg-transparent border-none text-gray-400 cursor-pointer p-2 rounded-full items-center justify-center transition-all duration-300 hover:bg-white/10 hover:text-white"
+            onClick={() => setIsSearchOpen(!isSearchOpen)}
+            aria-label="Search"
+          >
+            <Search className="w-6 h-6" />
+          </button>
 
-          {isSignedIn ? (
+          {/* Search Input (appears when search is clicked) */}
+          {isSearchOpen && (
+            <form onSubmit={handleSearch} className="hidden md:block absolute right-24 top-1/2 -translate-y-1/2">
+              <input
+                type="text"
+                placeholder="Search movies..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
+                className="w-52 px-3 py-2 bg-transparent border-b-2 border-red-600 text-white text-sm outline-none transition-all duration-300"
+              />
+            </form>
+          )}
+
+          {/* Auth Section */}
+          {!isLoaded ? (
             <div className="hidden md:flex items-center gap-3">
-              <button className="flex items-center gap-2 bg-white/10 border-none text-white px-4 py-2 rounded-full cursor-pointer text-sm font-medium transition-all duration-300 hover:bg-white/15">
-                <User size={20} />
-                <span>{user?.fullName || user?.firstName || 'Profile'}</span>
-              </button>
-              <button 
-                className="bg-transparent border-none text-gray-400 cursor-pointer p-2 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-white/10 hover:text-white"
-                onClick={handleLogout}
-                title="Logout"
-              >
-                <LogOut size={20} />
-              </button>
+              <div className="w-24 h-10 bg-white/10 rounded-full animate-pulse"></div>
             </div>
-          ) : (
+          ) : !user ? (
             <button 
               onClick={() => openSignIn()}
-              className="hidden md:inline-block bg-red-600 text-white px-6 py-2.5 rounded-md text-[15px] font-semibold transition-all duration-300 hover:bg-red-500 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(229,9,20,0.4)] cursor-pointer border-none"
+              className="hidden md:inline-block px-4 py-1 sm:px-7 sm:py-2 bg-red-600 hover:bg-red-700 transition rounded-full font-medium cursor-pointer text-white border-none text-sm sm:text-base"
             >
               Login
             </button>
+          ) : (
+            <div className="hidden md:block">
+              <UserButton afterSignOutUrl="/">
+                <UserButton.MenuItems>
+                  <UserButton.Action 
+                    label="My Bookings" 
+                    labelIcon={<TicketPlus width={15} />}
+                    onClick={() => navigate('/booking')}
+                  />
+                </UserButton.MenuItems>
+              </UserButton>
+            </div>
           )}
 
           <button
@@ -215,34 +222,35 @@ const Navbar = () => {
           </ul>
 
           <div className="border-t border-neutral-800 pt-6 flex flex-col gap-3">
-            {isSignedIn ? (
-              <>
-                <Link 
-                  to="/profile" 
-                  className="flex items-center gap-3 bg-white/5 text-white py-3.5 px-4 rounded-lg text-base font-medium no-underline transition-all duration-300 hover:bg-white/10"
-                  onClick={handleLinkClick}
-                >
-                  <User size={20} />
-                  <span>{user?.fullName || user?.firstName || 'My Profile'}</span>
-                </Link>
-                <button 
-                  className="flex items-center justify-center gap-3 bg-transparent border-2 border-neutral-800 text-gray-400 py-3.5 px-4 rounded-lg text-base font-medium cursor-pointer transition-all duration-300 hover:border-red-600 hover:text-red-600"
-                  onClick={handleLogout}
-                >
-                  <LogOut size={20} />
-                  <span>Logout</span>
-                </button>
-              </>
-            ) : (
+            {!isLoaded ? (
+              <div className="w-full h-14 bg-white/5 rounded-lg animate-pulse"></div>
+            ) : !user ? (
               <button 
                 onClick={() => {
                   openSignIn();
                   handleLinkClick();
                 }}
-                className="bg-red-600 text-white py-3.5 px-6 rounded-lg text-base font-semibold text-center transition-all duration-300 hover:bg-red-500 cursor-pointer border-none w-full"
+                className="px-4 py-3.5 sm:px-7 sm:py-3.5 bg-red-600 hover:bg-red-700 transition rounded-full font-medium cursor-pointer text-white border-none text-base text-center w-full"
               >
                 Login
               </button>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <Link 
+                  to="/booking" 
+                  className="flex items-center gap-3 bg-white/5 text-white py-3.5 px-4 rounded-lg text-base font-medium no-underline transition-all duration-300 hover:bg-white/10"
+                  onClick={handleLinkClick}
+                >
+                  <TicketPlus size={20} />
+                  <span>My Bookings</span>
+                </Link>
+                <button 
+                  className="px-4 py-3.5 bg-transparent border-2 border-neutral-800 text-gray-400 hover:border-red-600 hover:text-red-600 transition rounded-lg font-medium cursor-pointer text-base"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
+              </div>
             )}
           </div>
         </div>
