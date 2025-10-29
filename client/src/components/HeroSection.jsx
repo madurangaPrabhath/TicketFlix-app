@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Clock, Play, Info } from 'lucide-react';
+import { Calendar, Clock, Play, Info, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import backgroundImage from '../assets/backgroundImage.png';
 import marvelLogo from '../assets/marvelLogo.svg';
@@ -83,19 +83,11 @@ const HeroSection = ({ movie }) => {
 
         <div className='flex items-center gap-4 flex-wrap'>
           <button 
-            onClick={handleBookTickets}
+            onClick={() => navigate('/movies')}
             className='flex items-center gap-2 px-8 py-3 bg-red-600 hover:bg-red-700 transition-all duration-300 rounded-md text-white font-semibold text-base shadow-lg hover:shadow-red-600/50 hover:scale-105'
           >
-            <Play className='w-5 h-5 fill-white' />
-            Book Tickets
-          </button>
-          
-          <button 
-            onClick={handleWatchTrailer}
-            className='flex items-center gap-2 px-8 py-3 bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-300 rounded-md text-white font-semibold text-base border border-white/30'
-          >
-            <Info className='w-5 h-5' />
-            More Info
+            Explore Movies
+            <ArrowRight className="w-5 h-5"/>
           </button>
         </div>
       </div>
