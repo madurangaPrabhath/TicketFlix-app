@@ -15,7 +15,6 @@ const App = () => {
   const isAdminRoute = useLocation().pathname.startsWith('/admin');
   const { isLoaded } = useUser();
 
-  // Show loading screen while Clerk is initializing
   if (!isLoaded) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">

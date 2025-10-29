@@ -36,7 +36,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 bg-linear-to-b from-black/95 to-black/85 backdrop-blur-md z-50 shadow-lg">
+    <nav className="fixed top-0 left-0 right-0 bg-linear-to-b from-black/40 to-black/20 backdrop-blur-sm z-50">
       <div className="max-w-7xl mx-auto px-6 h-[70px] flex items-center justify-between gap-8">
         <Link 
           to="/" 
@@ -99,7 +99,6 @@ const Navbar = () => {
         </ul>
 
         <div className="flex items-center gap-4 shrink-0">
-          {/* Search Icon - Hidden on Mobile */}
           <button
             className="hidden md:flex bg-transparent border-none text-gray-400 cursor-pointer p-2 rounded-full items-center justify-center transition-all duration-300 hover:bg-white/10 hover:text-white"
             onClick={() => setIsSearchOpen(!isSearchOpen)}
@@ -108,7 +107,6 @@ const Navbar = () => {
             <Search className="w-6 h-6" />
           </button>
 
-          {/* Search Input (appears when search is clicked) */}
           {isSearchOpen && (
             <form onSubmit={handleSearch} className="hidden md:block absolute right-24 top-1/2 -translate-y-1/2">
               <input
@@ -122,7 +120,6 @@ const Navbar = () => {
             </form>
           )}
 
-          {/* Auth Section */}
           {!isLoaded ? (
             <div className="hidden md:flex items-center gap-3">
               <div className="w-24 h-10 bg-white/10 rounded-full animate-pulse"></div>
