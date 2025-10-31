@@ -1,6 +1,6 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Star, Calendar, Clock } from 'lucide-react';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { Star, Calendar, Clock } from "lucide-react";
 
 const MovieCard = ({ movie }) => {
   const navigate = useNavigate();
@@ -11,24 +11,30 @@ const MovieCard = ({ movie }) => {
     return `${hours}h ${mins}m`;
   };
 
-  const genreString = movie.genres?.slice(0, 2).map(genre => genre.name).join(' | ') || '';
+  const genreString =
+    movie.genres
+      ?.slice(0, 2)
+      .map((genre) => genre.name)
+      .join(" | ") || "";
 
-  const releaseYear = movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A';
+  const releaseYear = movie.release_date
+    ? new Date(movie.release_date).getFullYear()
+    : "N/A";
 
   const handleMovieClick = () => {
-    navigate(`/movie/${movie.id}`);
+    navigate(`/movies/${movie._id}`);
     window.scrollTo(0, 0);
   };
 
   const handleBuyTickets = (e) => {
     e.stopPropagation();
-    navigate(`/movie/${movie.id}`);
+    navigate(`/movies/${movie._id}`);
     window.scrollTo(0, 0);
   };
 
   return (
     <div className="group cursor-pointer transform transition-all duration-300 hover:scale-105">
-      <div 
+      <div
         onClick={handleMovieClick}
         className="relative aspect-2/3 rounded-lg overflow-hidden shadow-lg mb-3"
       >
@@ -69,12 +75,12 @@ const MovieCard = ({ movie }) => {
         <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/80 backdrop-blur-sm px-2 py-1 rounded-full">
           <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
           <span className="text-xs font-semibold text-white">
-            {movie.vote_average?.toFixed(1) || 'N/A'}
+            {movie.vote_average?.toFixed(1) || "N/A"}
           </span>
         </div>
       </div>
 
-      <h3 
+      <h3
         onClick={handleMovieClick}
         className="text-sm md:text-base font-semibold text-white line-clamp-2 group-hover:text-red-600 transition-colors duration-300 mb-1"
       >
