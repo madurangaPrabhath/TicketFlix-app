@@ -88,12 +88,9 @@ const Favorite = () => {
 
       <div className="relative z-10 px-6 md:px-12 lg:px-36">
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-3">
-            <Heart className="w-10 h-10 text-red-600 fill-red-600" />
-            <h1 className="text-4xl md:text-5xl font-bold text-white">
-              My Favorites
-            </h1>
-          </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
+            My Favorites
+          </h1>
           <p className="text-gray-400 text-sm md:text-base">
             {favorites.length} {favorites.length === 1 ? "movie" : "movies"}{" "}
             saved
