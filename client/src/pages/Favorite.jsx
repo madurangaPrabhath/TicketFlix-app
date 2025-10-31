@@ -69,7 +69,7 @@ const Favorite = () => {
               {[1, 2, 3, 4, 5].map((i) => (
                 <div
                   key={i}
-                  className="aspect-[2/3] bg-neutral-800 rounded-xl"
+                  className="aspect-2/3 bg-neutral-800 rounded-xl"
                 ></div>
               ))}
             </div>
