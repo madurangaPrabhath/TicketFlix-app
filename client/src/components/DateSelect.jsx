@@ -43,7 +43,9 @@ const DateSelect = ({ dateTime, id }) => {
       return;
     }
 
-    navigate(`/movie/${id}/${id}`);
+    navigate(`/movie/${id}/${id}`, {
+      state: { selectedDate: selectedDate }
+    });
     window.scrollTo(0, 0);
   };
 

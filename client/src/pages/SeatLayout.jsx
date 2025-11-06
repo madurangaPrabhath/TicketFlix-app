@@ -1,15 +1,17 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { dummyDateTimeData, dummyShowsData } from "../assets/assets";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { dummyShowsData } from "../assets/assets";
 import { useEffect, useState } from "react";
-import { ArrowRight, Clock, Check } from "lucide-react";
+import { ArrowRight, Clock, Check, Calendar } from "lucide-react";
 import toast from "react-hot-toast";
 
 const SeatLayout = () => {
   const { id, showId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [selectedTime, setSelectedTime] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
   const [show, setShow] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -48,6 +50,26 @@ const SeatLayout = () => {
     getShow();
     window.scrollTo(0, 0);
   }, [id]);
+
+  useEffect(() => {
+    if (location.state?.selectedDate) {
+      setSelectedDate(location.state.selectedDate);
+      console.log("Received date from previous page:", location.state.selectedDate);
+    }
+  }, [location.state]);
+
+  const formatDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      const day = date.getDate();
+      const month = date.toLocaleDateString("en-US", { month: "short" });
+      const weekday = date.toLocaleDateString("en-US", { weekday: "short" });
+      return { day, month, weekday };
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return { day: "?", month: "?", weekday: "?" };
+    }
+  };
 
   const handleSeatClick = (seat) => {
     if (!selectedTime) {
@@ -107,7 +129,10 @@ const SeatLayout = () => {
     </div>
   );
 
-  const totalPrice = selectedSeats.length * 150;
+  const ticketPrice = 12;
+  const totalPrice = selectedSeats.length * ticketPrice;
+  const convenienceFee = selectedSeats.length * 1.5;
+  const grandTotal = totalPrice + convenienceFee;
 
   if (loading) {
     return (
@@ -247,8 +272,31 @@ const SeatLayout = () => {
               </div>
 
               <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-neutral-700">
+                {selectedDate ? (
+                  <div>
+                    <p className="text-gray-400 text-xs uppercase tracking-wider flex items-center gap-1">
+                      <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                      Date
+                    </p>
+                    <p className="text-white font-semibold text-base sm:text-lg mt-1">
+                      {formatDate(selectedDate).weekday}, {formatDate(selectedDate).month} {formatDate(selectedDate).day}
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-gray-400 text-xs uppercase tracking-wider flex items-center gap-1">
+                      <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                      Date
+                    </p>
+                    <p className="text-gray-500 text-sm mt-1">Please select a date first</p>
+                  </div>
+                )}
+
                 <div>
-                  <p className="text-gray-400 text-xs uppercase tracking-wider">Show Time</p>
+                  <p className="text-gray-400 text-xs uppercase tracking-wider flex items-center gap-1">
+                    <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                    Show Time
+                  </p>
                   <p className="text-white font-semibold text-base sm:text-lg mt-1">
                     {selectedTime || "Not selected"}
                   </p>
@@ -282,15 +330,15 @@ const SeatLayout = () => {
 
               <div className="space-y-1.5 sm:space-y-2 mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-neutral-700">
                 <div className="flex justify-between text-xs sm:text-sm">
-                  <span className="text-gray-400">₹150 × {selectedSeats.length}</span>
+                  <span className="text-gray-400">${ticketPrice.toFixed(2)} × {selectedSeats.length}</span>
                   <span className="text-white font-semibold">
-                    ₹{(150 * selectedSeats.length).toLocaleString("en-IN")}
+                    ${(selectedSeats.length * ticketPrice).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs sm:text-sm">
                   <span className="text-gray-400">Convenience Fee</span>
                   <span className="text-white font-semibold">
-                    ₹{(selectedSeats.length * 20).toLocaleString("en-IN")}
+                    ${convenienceFee.toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -298,12 +346,16 @@ const SeatLayout = () => {
               <div className="flex justify-between mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-neutral-700">
                 <span className="text-white font-bold text-sm sm:text-base">Total</span>
                 <span className="text-green-400 font-bold text-lg sm:text-xl">
-                  ₹{(totalPrice + selectedSeats.length * 20).toLocaleString("en-IN")}
+                  ${grandTotal.toFixed(2)}
                 </span>
               </div>
 
               <button
                 onClick={() => {
+                  if (!selectedDate) {
+                    toast.error("Please go back and select a date first");
+                    return;
+                  }
                   if (!selectedTime) {
                     toast.error("Please select a show time");
                     return;
@@ -315,15 +367,16 @@ const SeatLayout = () => {
                   navigate(`/checkout`, {
                     state: {
                       movie: show.movie,
+                      date: selectedDate,
                       time: selectedTime,
                       seats: selectedSeats,
-                      totalPrice: totalPrice + selectedSeats.length * 20,
+                      totalPrice: grandTotal,
                     },
                   });
                 }}
-                disabled={selectedSeats.length === 0 || !selectedTime}
+                disabled={selectedSeats.length === 0 || !selectedTime || !selectedDate}
                 className={`w-full py-2.5 sm:py-3 rounded-lg font-bold transition-all duration-300 flex items-center justify-center gap-2 text-sm sm:text-base ${
-                  selectedSeats.length > 0 && selectedTime
+                  selectedSeats.length > 0 && selectedTime && selectedDate
                     ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg shadow-green-600/30 hover:scale-105 active:scale-95"
                     : "bg-neutral-700 text-gray-400 cursor-not-allowed opacity-50"
                 }`}
