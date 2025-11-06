@@ -364,7 +364,7 @@ const SeatLayout = () => {
                     toast.error("Please select at least one seat");
                     return;
                   }
-                  navigate(`/checkout`, {
+                  navigate(`/booking`, {
                     state: {
                       movie: show.movie,
                       date: selectedDate,
