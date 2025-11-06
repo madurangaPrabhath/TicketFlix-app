@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, Calendar, Clock } from "lucide-react";
-import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
