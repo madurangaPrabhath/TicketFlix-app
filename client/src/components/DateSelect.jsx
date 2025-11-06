@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Calendar, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -8,7 +8,6 @@ const DateSelect = ({ dateTime, id }) => {
   const scrollContainerRef = useRef(null);
 
   const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedTime, setSelectedTime] = useState(null);
 
   const dates = Object.keys(dateTime);
 
@@ -34,26 +33,8 @@ const DateSelect = ({ dateTime, id }) => {
     }
   };
 
-  const formatTime = (timeString) => {
-    try {
-      const date = new Date(timeString);
-      return date.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
-    } catch (error) {
-      return timeString;
-    }
-  };
-
   const handleDateClick = (date) => {
     setSelectedDate(date);
-    setSelectedTime(null);
-  };
-
-  const handleTimeClick = (time) => {
-    setSelectedTime(time);
   };
 
   const onBookHandler = () => {
@@ -61,21 +42,9 @@ const DateSelect = ({ dateTime, id }) => {
       toast.error("Please select a date");
       return;
     }
-    if (!selectedTime) {
-      toast.error("Please select a show time");
-      return;
-    }
 
-    const selectedShow = dateTime[selectedDate]?.find(
-      (show) => show.time === selectedTime
-    );
-
-    if (selectedShow) {
-      navigate(`/movie/${id}/${selectedShow.showId}`);
-      window.scrollTo(0, 0);
-    } else {
-      toast.error("Show not found");
-    }
+    navigate(`/movie/${id}/${id}`);
+    window.scrollTo(0, 0);
   };
 
   if (!dates || dates.length === 0) {
@@ -99,10 +68,10 @@ const DateSelect = ({ dateTime, id }) => {
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
             <Calendar className="w-8 h-8 text-red-600" />
-            Select Date & Time
+            Select Date
           </h2>
           <p className="text-gray-400">
-            Choose your preferred date and show time to proceed with booking
+            Choose your preferred date to proceed with booking
           </p>
         </div>
 
@@ -171,61 +140,7 @@ const DateSelect = ({ dateTime, id }) => {
           </div>
         </div>
 
-        {selectedDate && dateTime[selectedDate] && dateTime[selectedDate].length > 0 ? (
-          <div className="mb-8 animate-fadeIn">
-            <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-green-500" />
-              Select Show Time
-            </h3>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {dateTime[selectedDate].map((show, index) => {
-                const time = formatTime(show.time);
-                const isSelected = selectedTime === show.time;
-
-                return (
-                  <button
-                    key={index}
-                    onClick={() => handleTimeClick(show.time)}
-                    type="button"
-                    className={`
-                      p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer
-                      ${
-                        isSelected
-                          ? "bg-gradient-to-br from-green-600 to-green-700 border-green-500 shadow-lg shadow-green-600/50 scale-105"
-                          : "bg-neutral-900 border-neutral-700 text-white hover:border-green-500 hover:bg-neutral-800 hover:scale-105 active:scale-95"
-                      }
-                    `}
-                  >
-                    <div className="text-center">
-                      <Clock
-                        className={`w-5 h-5 mx-auto mb-2 ${
-                          isSelected ? "text-white" : "text-gray-400"
-                        }`}
-                      />
-                      <p className="text-lg font-semibold text-white">
-                        {time}
-                      </p>
-                      <p
-                        className={`text-xs mt-1 ${
-                          isSelected ? "text-green-100" : "text-gray-500"
-                        }`}
-                      >
-                        {show.availableSeats || "Available"}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : selectedDate ? (
-          <div className="text-center text-gray-400 py-8">
-            No show times available for this date
-          </div>
-        ) : null}
-
-        {selectedDate && selectedTime && (
+        {selectedDate && (
           <div className="bg-gradient-to-r from-neutral-900 to-neutral-800 border border-neutral-700 rounded-2xl p-6 shadow-xl animate-fadeIn">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
@@ -241,10 +156,6 @@ const DateSelect = ({ dateTime, id }) => {
                       {formatDate(selectedDate).day}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 bg-neutral-800 px-4 py-2 rounded-lg">
-                    <Clock className="w-4 h-4 text-green-500" />
-                    <span>{formatTime(selectedTime)}</span>
-                  </div>
                 </div>
               </div>
 
@@ -252,7 +163,7 @@ const DateSelect = ({ dateTime, id }) => {
                 onClick={onBookHandler}
                 className="px-8 py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-bold transition-all duration-300 shadow-lg shadow-red-600/30 hover:shadow-red-600/50 hover:scale-105 active:scale-95 whitespace-nowrap"
               >
-                Proceed to Book
+                Proceed to Booking
               </button>
             </div>
           </div>
@@ -262,7 +173,7 @@ const DateSelect = ({ dateTime, id }) => {
           <div className="text-center text-gray-400 py-12 bg-neutral-900 rounded-xl border border-neutral-800">
             <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-600" />
             <p className="text-lg">
-              Please select a date to view available show times
+              Please select a date to proceed with booking
             </p>
           </div>
         )}
