@@ -11,6 +11,7 @@ import {
   CheckCircle,
   AlertCircle,
   Printer,
+  CreditCard,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { dummyShowsData, dummyBookingData } from "../assets/assets";
@@ -125,6 +126,16 @@ const Bookings = () => {
     setBookings(
       bookings.map((b) => (b.id === bookingId ? { ...b, status: "cancelled" } : b))
     );
+  };
+
+  const handlePayment = (bookingId, totalPrice) => {
+    toast.success(`Processing payment of ${totalPrice}...`);
+    setTimeout(() => {
+      setBookings(
+        bookings.map((b) => (b.id === bookingId ? { ...b, status: "confirmed" } : b))
+      );
+      toast.success("Payment successful! Booking confirmed.");
+    }, 1500);
   };
 
   const getStatusBadgeColor = (status) => {
@@ -312,6 +323,19 @@ const Bookings = () => {
                       >
                         <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         <span className="hidden sm:inline">Print</span>
+                      </button>
+
+                      <button
+                        onClick={() => handlePayment(booking.id, booking.totalPrice)}
+                        disabled={booking.status === "cancelled" || booking.status === "confirmed"}
+                        className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm ${
+                          booking.status === "cancelled" || booking.status === "confirmed"
+                            ? "bg-neutral-700 text-gray-500 cursor-not-allowed opacity-50"
+                            : "bg-orange-600 hover:bg-orange-700 text-white active:scale-95"
+                        }`}
+                      >
+                        <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">Pay</span>
                       </button>
 
                       <button
