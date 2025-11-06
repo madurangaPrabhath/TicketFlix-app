@@ -87,13 +87,22 @@ const DateSelect = ({ dateTime, id }) => {
           <h3 className="text-xl font-semibold text-white mb-4">Choose Date</h3>
 
           <div className="relative">
-            <button
-              onClick={() => scroll("left")}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 rounded-full flex items-center justify-center text-white transition-colors duration-300 shadow-lg"
-              aria-label="Scroll left"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
+            {dates.length > 4 && (
+              <>
+                <button
+                  onClick={() => scroll("left")}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-neutral-800 hover:bg-neutral-700 text-white p-2 rounded-full shadow-lg"
+                >
+                  ←
+                </button>
+                <button
+                  onClick={() => scroll("right")}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-neutral-800 hover:bg-neutral-700 text-white p-2 rounded-full shadow-lg"
+                >
+                  →
+                </button>
+              </>
+            )}
 
             <div
               ref={scrollContainerRef}
@@ -109,67 +118,30 @@ const DateSelect = ({ dateTime, id }) => {
                   <button
                     key={date}
                     onClick={() => {
+                      console.log("Date clicked:", date);
                       if (!isPast) {
                         setSelectedDate(date);
                         setSelectedTime(null);
                       }
                     }}
                     disabled={isPast}
-                    className={`shrink-0 w-24 p-4 rounded-xl border-2 transition-all duration-300 ${
-                      isPast
-                        ? "bg-neutral-900/50 border-neutral-800 cursor-not-allowed opacity-50"
-                        : isSelected
-                        ? "bg-red-600 border-red-600 shadow-lg shadow-red-600/30 scale-105"
-                        : "bg-neutral-900 border-neutral-700 hover:border-red-600/50 hover:bg-neutral-800"
+                    className={`flex-shrink-0 w-24 p-4 rounded-xl border-2 transition-all duration-300 ${
+                      isSelected
+                        ? "bg-red-600 border-red-600 text-white shadow-lg shadow-red-600/30"
+                        : isPast
+                        ? "bg-neutral-900 border-neutral-800 text-gray-600 cursor-not-allowed opacity-50"
+                        : "bg-neutral-900 border-neutral-700 text-white hover:border-red-600 hover:bg-neutral-800"
                     }`}
                   >
                     <div className="text-center">
-                      <p
-                        className={`text-xs font-medium mb-1 ${
-                          isPast
-                            ? "text-gray-600"
-                            : isSelected
-                            ? "text-white"
-                            : "text-gray-400"
-                        }`}
-                      >
-                        {weekday}
-                      </p>
-                      <p
-                        className={`text-2xl font-bold mb-1 ${
-                          isPast
-                            ? "text-gray-600"
-                            : isSelected
-                            ? "text-white"
-                            : "text-white"
-                        }`}
-                      >
-                        {day}
-                      </p>
-                      <p
-                        className={`text-xs ${
-                          isPast
-                            ? "text-gray-600"
-                            : isSelected
-                            ? "text-white"
-                            : "text-gray-400"
-                        }`}
-                      >
-                        {month}
-                      </p>
+                      <div className="text-sm font-medium mb-1">{weekday}</div>
+                      <div className="text-2xl font-bold mb-1">{day}</div>
+                      <div className="text-xs">{month}</div>
                     </div>
                   </button>
                 );
               })}
             </div>
-
-            <button
-              onClick={() => scroll("right")}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 rounded-full flex items-center justify-center text-white transition-colors duration-300 shadow-lg"
-              aria-label="Scroll right"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
           </div>
         </div>
 
