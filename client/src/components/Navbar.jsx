@@ -115,34 +115,6 @@ const Navbar = () => {
           </li>
           <li>
             <NavLink
-              to="/theaters"
-              className={({ isActive }) =>
-                `text-gray-400 text-base font-medium no-underline px-1 py-2 relative transition-colors duration-300 hover:text-white ${
-                  isActive
-                    ? 'text-white font-semibold after:content-[""] after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-red-600'
-                    : 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-red-600 after:transition-all after:duration-300 hover:after:w-full'
-                }`
-              }
-            >
-              Theaters
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/releases"
-              className={({ isActive }) =>
-                `text-gray-400 text-base font-medium no-underline px-1 py-2 relative transition-colors duration-300 hover:text-white ${
-                  isActive
-                    ? 'text-white font-semibold after:content-[""] after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-red-600'
-                    : 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-red-600 after:transition-all after:duration-300 hover:after:w-full'
-                }`
-              }
-            >
-              Releases
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
               to="/favorite"
               className={({ isActive }) =>
                 `text-gray-400 text-base font-medium no-underline px-1 py-2 relative transition-colors duration-300 hover:text-white ${
@@ -153,6 +125,20 @@ const Navbar = () => {
               }
             >
               Favorite
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/booking"
+              className={({ isActive }) =>
+                `text-gray-400 text-base font-medium no-underline px-1 py-2 relative transition-colors duration-300 hover:text-white ${
+                  isActive
+                    ? 'text-white font-semibold after:content-[""] after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-red-600'
+                    : 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-red-600 after:transition-all after:duration-300 hover:after:w-full'
+                }`
+              }
+            >
+              My Bookings
             </NavLink>
           </li>
         </ul>
@@ -278,32 +264,6 @@ const Navbar = () => {
             </li>
             <li>
               <NavLink
-                to="/theaters"
-                className={({ isActive }) =>
-                  `block text-gray-400 text-lg font-medium py-3.5 px-4 no-underline rounded-lg transition-all duration-300 hover:bg-white/5 hover:text-white ${
-                    isActive ? "bg-red-600/10 text-red-600 font-semibold" : ""
-                  }`
-                }
-                onClick={handleLinkClick}
-              >
-                Theaters
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/releases"
-                className={({ isActive }) =>
-                  `block text-gray-400 text-lg font-medium py-3.5 px-4 no-underline rounded-lg transition-all duration-300 hover:bg-white/5 hover:text-white ${
-                    isActive ? "bg-red-600/10 text-red-600 font-semibold" : ""
-                  }`
-                }
-                onClick={handleLinkClick}
-              >
-                Releases
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
                 to="/favorite"
                 className={({ isActive }) =>
                   `block text-gray-400 text-lg font-medium py-3.5 px-4 no-underline rounded-lg transition-all duration-300 hover:bg-white/5 hover:text-white ${
@@ -313,6 +273,19 @@ const Navbar = () => {
                 onClick={handleLinkClick}
               >
                 Favorite
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/booking"
+                className={({ isActive }) =>
+                  `block text-gray-400 text-lg font-medium py-3.5 px-4 no-underline rounded-lg transition-all duration-300 hover:bg-white/5 hover:text-white ${
+                    isActive ? "bg-red-600/10 text-red-600 font-semibold" : ""
+                  }`
+                }
+                onClick={handleLinkClick}
+              >
+                My Bookings
               </NavLink>
             </li>
           </ul>
