@@ -1,19 +1,23 @@
-import React from 'react'
-import Navbar from './components/Navbar'
-import { Route, Routes, useLocation } from 'react-router-dom'
-import Home from './pages/Home'
-import Movies from './pages/Movies'
-import MovieDetails from './pages/MovieDetails'
-import SeatLayout from './pages/SeatLayout'
-import Booking from './pages/Bookings'
-import Favorite from './pages/Favorite'
-import { Toaster } from 'react-hot-toast'
-import Footer from './components/Footer'
-import { useUser } from '@clerk/clerk-react'
-import { Layout } from 'lucide-react'
+import React from "react";
+import Navbar from "./components/Navbar";
+import { Route, Routes, useLocation } from "react-router-dom";
+import Home from "./pages/Home";
+import Movies from "./pages/Movies";
+import MovieDetails from "./pages/MovieDetails";
+import SeatLayout from "./pages/SeatLayout";
+import Booking from "./pages/Bookings";
+import Favorite from "./pages/Favorite";
+import { Toaster } from "react-hot-toast";
+import Footer from "./components/Footer";
+import { useUser } from "@clerk/clerk-react";
+import Layout from "./pages/admin/Layout";
+import Dashboard from "./pages/admin/Dashboard";
+import AddShows from "./pages/admin/AddShows";
+import ListShows from "./pages/admin/ListShows";
+import ListBookings from "./pages/admin/ListBookings";
 
 const App = () => {
-  const isAdminRoute = useLocation().pathname.startsWith('/admin');
+  const isAdminRoute = useLocation().pathname.startsWith("/admin");
   const { isLoaded } = useUser();
 
   if (!isLoaded) {
@@ -26,7 +30,7 @@ const App = () => {
       </div>
     );
   }
-  
+
   return (
     <>
       <Toaster />
@@ -47,7 +51,7 @@ const App = () => {
       </Routes>
       {!isAdminRoute && <Footer />}
     </>
-  )
-}
+  );
+};
 
-export default App
+export default App;
