@@ -135,18 +135,19 @@ const AddShows = () => {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-black min-h-screen">
-      <Title text1="Add" text2="Shows" />
+    <div className="p-0 md:p-0 bg-black min-h-screen w-full">
+      <div className="px-4 md:px-6 lg:px-8 py-6">
+        <Title text1="Add" text2="Shows" />
+      </div>
 
-      <div className="grid grid-cols-1 gap-6">
-        {/* Movie Selection Section */}
+      <div className="grid grid-cols-1 gap-6 px-4 md:px-6 lg:px-8 pb-8">
         <div>
-          <div className="bg-neutral-900 rounded-xl p-6 border border-neutral-700">
-            <h2 className="text-xl md:text-2xl font-bold text-white mb-6 flex items-center gap-2">
+          <div className="bg-neutral-900 rounded-xl p-4 md:p-6 border border-neutral-700">
+            <h2 className="text-lg md:text-2xl font-bold text-white mb-4 md:mb-6 flex items-center gap-2">
               <span className="text-red-600">◆</span> Select Movie
             </h2>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+            <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3 lg:gap-4">
               {movies.map((movie) => (
                 <div
                   key={movie.id}
@@ -168,17 +169,17 @@ const AddShows = () => {
                       }
                     />
 
-                    <div className="absolute top-2 left-2 bg-yellow-500 text-black px-2 py-1 rounded-full flex items-center gap-1 text-xs font-bold shadow-md">
-                      <Star size={12} fill="currentColor" />
+                    <div className="absolute top-1 left-1 md:top-2 md:left-2 bg-yellow-500 text-black px-1.5 md:px-2 py-0.5 md:py-1 rounded-full flex items-center gap-0.5 text-xs font-bold shadow-md">
+                      <Star size={10} fill="currentColor" />
                       {movie.vote_average.toFixed(1)}
                     </div>
 
                     {selectedMovie?.id === movie.id && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-sm">
-                        <div className="bg-red-600 rounded-full p-3 shadow-lg">
+                        <div className="bg-red-600 rounded-full p-2 md:p-3 shadow-lg">
                           <Check
-                            size={24}
-                            className="text-white"
+                            size={16}
+                            className="text-white md:w-6 md:h-6"
                             strokeWidth={3}
                           />
                         </div>
@@ -186,13 +187,13 @@ const AddShows = () => {
                     )}
 
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                      <span className="text-white font-semibold text-xs md:text-sm">
-                        Click to Select
+                      <span className="text-white font-semibold text-xs">
+                        Select
                       </span>
                     </div>
                   </div>
 
-                  <div className="p-3 bg-neutral-800 min-h-20 flex flex-col justify-between border-t border-neutral-700">
+                  <div className="p-2 md:p-3 bg-neutral-800 min-h-16 md:min-h-20 flex flex-col justify-between border-t border-neutral-700">
                     <p className="text-white font-semibold text-xs md:text-sm truncate leading-tight">
                       {movie.title}
                     </p>
@@ -212,40 +213,39 @@ const AddShows = () => {
             </div>
 
             {errors.movie && (
-              <div className="mt-4 flex items-center gap-3 bg-red-600/20 border border-red-600 text-red-400 p-4 rounded-lg">
-                <AlertCircle size={20} className="flex-shrink-0" />
-                <span className="text-sm">{errors.movie}</span>
+              <div className="mt-4 flex items-center gap-2 md:gap-3 bg-red-600/20 border border-red-600 text-red-400 p-3 md:p-4 rounded-lg text-sm">
+                <AlertCircle size={18} className="flex-shrink-0" />
+                <span>{errors.movie}</span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Form Section */}
         <div>
-          <div className="bg-neutral-900 rounded-xl p-6 border border-neutral-700">
-            <h2 className="text-xl md:text-2xl font-bold text-white mb-6 flex items-center gap-2">
+          <div className="bg-neutral-900 rounded-xl p-4 md:p-6 border border-neutral-700">
+            <h2 className="text-lg md:text-2xl font-bold text-white mb-4 md:mb-6 flex items-center gap-2">
               <span className="text-red-600">◆</span> Details
             </h2>
 
             {selectedMovie && (
-              <div className="mb-6 p-4 bg-gradient-to-r from-red-600/10 to-red-600/5 rounded-lg border border-red-600/30">
-                <p className="text-gray-400 text-xs uppercase tracking-widest font-semibold mb-2">
+              <div className="mb-6 p-3 md:p-4 bg-gradient-to-r from-red-600/10 to-red-600/5 rounded-lg border border-red-600/30">
+                <p className="text-gray-400 text-xs uppercase tracking-widest font-semibold mb-1 md:mb-2">
                   ✓ Selected Movie
                 </p>
-                <p className="text-white font-semibold text-sm truncate">
+                <p className="text-white font-semibold text-sm md:text-base truncate">
                   {selectedMovie.title}
                 </p>
               </div>
             )}
 
             <div className="mb-6">
-              <label className="block text-gray-300 text-sm font-semibold mb-3">
+              <label className="block text-gray-300 text-xs md:text-sm font-semibold mb-2 md:mb-3">
                 Show Price ($)
               </label>
               <div className="relative">
                 <DollarSign
                   size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
+                  className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-gray-500"
                 />
                 <input
                   type="number"
@@ -255,7 +255,7 @@ const AddShows = () => {
                     setShowPrice(e.target.value);
                     setErrors({ ...errors, price: "" });
                   }}
-                  className={`w-full bg-neutral-800 text-white pl-11 pr-4 py-3 rounded-lg border outline-none transition focus:ring-2 ${
+                  className={`w-full bg-neutral-800 text-white pl-10 md:pl-11 pr-3 md:pr-4 py-2 md:py-3 rounded-lg border outline-none transition focus:ring-2 text-sm ${
                     errors.price
                       ? "border-red-600 focus:ring-red-500/50"
                       : "border-neutral-700 focus:border-red-600 focus:ring-red-500/30"
@@ -263,21 +263,21 @@ const AddShows = () => {
                 />
               </div>
               {errors.price && (
-                <p className="text-red-400 text-xs mt-2 flex items-center gap-1">
+                <p className="text-red-400 text-xs mt-1 md:mt-2 flex items-center gap-1">
                   <AlertCircle size={14} /> {errors.price}
                 </p>
               )}
             </div>
 
             <div className="mb-6">
-              <label className="block text-gray-300 text-sm font-semibold mb-3">
+              <label className="block text-gray-300 text-xs md:text-sm font-semibold mb-2 md:mb-3">
                 Add Show Time
               </label>
               <div className="flex flex-col sm:flex-row gap-2">
                 <div className="relative flex-1">
                   <Calendar
                     size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+                    className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
                   />
                   <input
                     type="datetime-local"
@@ -286,7 +286,7 @@ const AddShows = () => {
                       setDateTimeInput(e.target.value);
                       setErrors({ ...errors, datetime: "" });
                     }}
-                    className={`w-full bg-neutral-800 text-white px-4 py-3 pl-11 rounded-lg border outline-none transition focus:ring-2 text-sm ${
+                    className={`w-full bg-neutral-800 text-white px-3 md:px-4 py-2 md:py-3 pl-10 md:pl-11 rounded-lg border outline-none transition focus:ring-2 text-xs md:text-sm ${
                       errors.datetime
                         ? "border-red-600 focus:ring-red-500/50"
                         : "border-neutral-700 focus:border-red-600 focus:ring-red-500/30"
@@ -295,15 +295,15 @@ const AddShows = () => {
                 </div>
                 <button
                   onClick={handleDateTimeAdd}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition duration-200 flex items-center justify-center gap-2 font-medium hover:shadow-lg hover:shadow-blue-600/30 active:scale-95 whitespace-nowrap sm:flex-none"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 md:px-6 py-2 md:py-3 rounded-lg transition duration-200 flex items-center justify-center gap-2 font-medium hover:shadow-lg hover:shadow-blue-600/30 active:scale-95 whitespace-nowrap text-sm"
                   title="Add time slot"
                 >
-                  <Plus size={18} />
-                  <span className="inline">Add</span>
+                  <Plus size={16} />
+                  <span>Add</span>
                 </button>
               </div>
               {errors.datetime && (
-                <p className="text-red-400 text-xs mt-2 flex items-center gap-1">
+                <p className="text-red-400 text-xs mt-1 md:mt-2 flex items-center gap-1">
                   <AlertCircle size={14} /> {errors.datetime}
                 </p>
               )}
@@ -340,15 +340,15 @@ const AddShows = () => {
             )}
 
             {errors.times && (
-              <div className="mb-6 flex items-center gap-3 bg-red-600/20 border border-red-600 text-red-400 p-4 rounded-lg">
-                <AlertCircle size={20} className="flex-shrink-0" />
-                <span className="text-sm">{errors.times}</span>
+              <div className="mb-6 flex items-center gap-2 md:gap-3 bg-red-600/20 border border-red-600 text-red-400 p-3 md:p-4 rounded-lg text-sm">
+                <AlertCircle size={18} className="flex-shrink-0" />
+                <span>{errors.times}</span>
               </div>
             )}
 
             <button
               onClick={handleAddShow}
-              className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white py-3 rounded-lg font-bold transition-all duration-200 transform hover:shadow-lg hover:shadow-red-600/40 active:scale-95 flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white py-2 md:py-3 rounded-lg font-bold transition-all duration-200 transform hover:shadow-lg hover:shadow-red-600/40 active:scale-95 flex items-center justify-center gap-2 text-sm md:text-base"
             >
               <Plus size={20} />
               Add Show

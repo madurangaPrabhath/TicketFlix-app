@@ -73,25 +73,27 @@ const ListBookings = () => {
   }
 
   return (
-    <div className="p-4 md:p-8 bg-black min-h-screen">
-      <Title text1="All" text2="Bookings" />
+    <div className="p-0 md:p-0 bg-black min-h-screen w-full">
+      <div className="px-4 md:px-6 lg:px-8 py-6">
+        <Title text1="All" text2="Bookings" />
+      </div>
 
-      <div className="mb-6 flex flex-col md:flex-row gap-4">
-        <div className="flex items-center gap-2 bg-neutral-800 rounded-lg px-4 py-2 flex-1 max-w-md">
-          <Search size={20} className="text-gray-400" />
+      <div className="px-4 md:px-6 lg:px-8 mb-4 md:mb-6 flex flex-col sm:flex-row gap-3 md:gap-4">
+        <div className="flex items-center gap-2 bg-neutral-800 rounded-lg px-3 md:px-4 py-2 md:py-2.5 w-full sm:flex-1 sm:max-w-sm">
+          <Search size={16} className="text-gray-400 flex-shrink-0" />
           <input
             type="text"
-            placeholder="Search by user or movie..."
+            placeholder="Search user/movie..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="bg-neutral-800 text-white outline-none w-full"
+            className="bg-neutral-800 text-white outline-none w-full text-xs sm:text-sm"
           />
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap sm:flex-nowrap">
           <button
             onClick={() => setFilterStatus("all")}
-            className={`px-4 py-2 rounded transition font-medium ${
+            className={`px-2 sm:px-3 md:px-4 py-2 rounded transition font-medium text-xs sm:text-sm flex-1 sm:flex-none ${
               filterStatus === "all"
                 ? "bg-red-600 text-white"
                 : "bg-neutral-800 text-gray-300 hover:bg-neutral-700"
@@ -101,7 +103,7 @@ const ListBookings = () => {
           </button>
           <button
             onClick={() => setFilterStatus("paid")}
-            className={`px-4 py-2 rounded transition font-medium ${
+            className={`px-2 sm:px-3 md:px-4 py-2 rounded transition font-medium text-xs sm:text-sm flex-1 sm:flex-none ${
               filterStatus === "paid"
                 ? "bg-green-600 text-white"
                 : "bg-neutral-800 text-gray-300 hover:bg-neutral-700"
@@ -111,7 +113,7 @@ const ListBookings = () => {
           </button>
           <button
             onClick={() => setFilterStatus("unpaid")}
-            className={`px-4 py-2 rounded transition font-medium ${
+            className={`px-2 sm:px-3 md:px-4 py-2 rounded transition font-medium text-xs sm:text-sm flex-1 sm:flex-none ${
               filterStatus === "unpaid"
                 ? "bg-yellow-600 text-white"
                 : "bg-neutral-800 text-gray-300 hover:bg-neutral-700"
@@ -122,29 +124,29 @@ const ListBookings = () => {
         </div>
       </div>
 
-      <div className="overflow-x-auto bg-neutral-900 rounded-lg">
-        <table className="w-full text-sm md:text-base">
+      <div className="px-4 md:px-6 lg:px-8 overflow-x-auto bg-neutral-900 rounded-lg">
+        <table className="w-full text-xs sm:text-sm md:text-base">
           <thead>
             <tr className="border-b border-neutral-700 bg-neutral-800">
-              <th className="p-4 text-left text-gray-300 font-semibold">
+              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm">
                 User
               </th>
-              <th className="p-4 text-left text-gray-300 font-semibold">
+              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm hidden sm:table-cell">
                 Movie
               </th>
-              <th className="p-4 text-left text-gray-300 font-semibold">
-                Show Date & Time
+              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm hidden md:table-cell">
+                Show Date
               </th>
-              <th className="p-4 text-left text-gray-300 font-semibold">
+              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm">
                 Seats
               </th>
-              <th className="p-4 text-left text-gray-300 font-semibold">
+              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm">
                 Amount
               </th>
-              <th className="p-4 text-left text-gray-300 font-semibold">
+              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm hidden lg:table-cell">
                 Status
               </th>
-              <th className="p-4 text-left text-gray-300 font-semibold">
+              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm">
                 Actions
               </th>
             </tr>
@@ -156,67 +158,75 @@ const ListBookings = () => {
                   key={index}
                   className="border-b border-neutral-700 hover:bg-neutral-800/50 transition"
                 >
-                  <td className="p-4 text-white font-medium">
+                  <td className="p-2 md:p-3 lg:p-4 text-white font-medium text-xs sm:text-sm truncate">
                     {booking.user.name}
                   </td>
-                  <td className="p-4 text-gray-300 truncate max-w-xs">
+                  <td className="p-2 md:p-3 lg:p-4 text-gray-300 hidden sm:table-cell text-xs sm:text-sm truncate max-w-xs md:max-w-sm">
                     {booking.show.movie.title}
                   </td>
-                  <td className="p-4 text-gray-300">
+                  <td className="p-2 md:p-3 lg:p-4 text-gray-300 hidden md:table-cell text-xs sm:text-sm">
                     {formatDateTime(booking.show.showDateTime)}
                   </td>
-                  <td className="p-4">
-                    <div className="flex flex-wrap gap-1">
-                      {booking.bookedSeats.map((seat, idx) => (
+                  <td className="p-2 md:p-3 lg:p-4">
+                    <div className="flex flex-wrap gap-0.5 md:gap-1">
+                      {booking.bookedSeats.slice(0, 3).map((seat, idx) => (
                         <span
                           key={idx}
-                          className="inline-block bg-gradient-to-r from-blue-600 to-blue-500 text-white px-2 py-1 rounded text-xs font-semibold"
+                          className="inline-block bg-gradient-to-r from-blue-600 to-blue-500 text-white px-1.5 md:px-2 py-0.5 md:py-1 rounded text-xs md:text-sm font-semibold"
                         >
                           {seat}
                         </span>
                       ))}
-                      <span className="inline-block text-gray-400 text-xs font-medium px-2 py-1">
-                        ({booking.bookedSeats.length} seats)
-                      </span>
+                      {booking.bookedSeats.length > 3 && (
+                        <span className="inline-block text-gray-400 text-xs px-1.5 md:px-2 py-0.5 md:py-1">
+                          +{booking.bookedSeats.length - 3}
+                        </span>
+                      )}
                     </div>
                   </td>
-                  <td className="p-4 text-green-400 font-bold">
+                  <td className="p-2 md:p-3 lg:p-4 text-green-400 font-bold text-xs sm:text-sm">
                     ${booking.amount}
                   </td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-2">
+                  <td className="p-2 md:p-3 lg:p-4 hidden lg:table-cell">
+                    <div className="flex items-center gap-1 md:gap-2">
                       {booking.isPaid ? (
                         <>
-                          <CheckCircle size={18} className="text-green-500" />
-                          <span className="text-green-400 font-medium">
+                          <CheckCircle
+                            size={16}
+                            className="text-green-500 flex-shrink-0"
+                          />
+                          <span className="text-green-400 font-medium text-xs sm:text-sm">
                             Paid
                           </span>
                         </>
                       ) : (
                         <>
-                          <Clock size={18} className="text-yellow-500" />
-                          <span className="text-yellow-400 font-medium">
+                          <Clock
+                            size={16}
+                            className="text-yellow-500 flex-shrink-0"
+                          />
+                          <span className="text-yellow-400 font-medium text-xs sm:text-sm">
                             Unpaid
                           </span>
                         </>
                       )}
                     </div>
                   </td>
-                  <td className="p-4">
-                    <div className="flex gap-2">
+                  <td className="p-2 md:p-3 lg:p-4">
+                    <div className="flex gap-1 md:gap-2">
                       <button
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded transition flex items-center gap-2"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-2 md:px-3 py-1 md:py-2 rounded transition flex items-center gap-1 text-xs md:text-sm flex-shrink-0"
                         title="Download Receipt"
                       >
-                        <Download size={16} />
-                        <span className="hidden sm:inline">Receipt</span>
+                        <Download size={14} className="md:size-4" />
+                        <span className="hidden lg:inline">Receipt</span>
                       </button>
                       <button
                         onClick={() => setDeleteConfirm(booking._id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded transition flex items-center gap-2"
+                        className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1 md:py-2 rounded transition flex items-center gap-1 text-xs md:text-sm flex-shrink-0"
                       >
-                        <Trash2 size={16} />
-                        <span className="hidden sm:inline">Delete</span>
+                        <Trash2 size={14} className="md:size-4" />
+                        <span className="hidden lg:inline">Delete</span>
                       </button>
                     </div>
                   </td>
@@ -224,7 +234,10 @@ const ListBookings = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="7" className="p-8 text-center text-gray-400">
+                <td
+                  colSpan="7"
+                  className="p-4 md:p-6 lg:p-8 text-center text-gray-400 text-xs sm:text-sm"
+                >
                   No bookings found matching your search.
                 </td>
               </tr>
@@ -233,22 +246,22 @@ const ListBookings = () => {
         </table>
       </div>
 
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-neutral-900 rounded-lg p-6 border border-neutral-700">
-          <p className="text-gray-400 text-sm">Total Bookings</p>
-          <p className="text-3xl font-bold text-white mt-2">
+      <div className="mt-6 md:mt-8 px-4 md:px-6 lg:px-8 grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 lg:gap-6">
+        <div className="bg-neutral-900 rounded-lg p-4 md:p-6 border border-neutral-700">
+          <p className="text-gray-400 text-xs md:text-sm">Total Bookings</p>
+          <p className="text-2xl md:text-3xl font-bold text-white mt-2">
             {bookings.length}
           </p>
         </div>
-        <div className="bg-neutral-900 rounded-lg p-6 border border-neutral-700">
-          <p className="text-gray-400 text-sm">Paid Bookings</p>
-          <p className="text-3xl font-bold text-green-400 mt-2">
+        <div className="bg-neutral-900 rounded-lg p-4 md:p-6 border border-neutral-700">
+          <p className="text-gray-400 text-xs md:text-sm">Paid Bookings</p>
+          <p className="text-2xl md:text-3xl font-bold text-green-400 mt-2">
             {bookings.filter((b) => b.isPaid).length}
           </p>
         </div>
-        <div className="bg-neutral-900 rounded-lg p-6 border border-neutral-700">
-          <p className="text-gray-400 text-sm">Total Revenue</p>
-          <p className="text-3xl font-bold text-yellow-400 mt-2">
+        <div className="bg-neutral-900 rounded-lg p-4 md:p-6 border border-neutral-700">
+          <p className="text-gray-400 text-xs md:text-sm">Total Revenue</p>
+          <p className="text-2xl md:text-3xl font-bold text-yellow-400 mt-2">
             ${bookings.reduce((sum, b) => sum + (b.isPaid ? b.amount : 0), 0)}
           </p>
         </div>
@@ -256,24 +269,24 @@ const ListBookings = () => {
 
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-neutral-900 rounded-lg p-6 max-w-sm w-full border border-neutral-700">
-            <h3 className="text-xl font-bold text-white mb-4">
+          <div className="bg-neutral-900 rounded-lg p-4 md:p-6 max-w-sm w-full border border-neutral-700">
+            <h3 className="text-base md:text-lg lg:text-xl font-bold text-white mb-3 md:mb-4">
               Confirm Delete
             </h3>
-            <p className="text-gray-300 mb-6">
+            <p className="text-gray-300 mb-4 md:mb-6 text-xs sm:text-sm md:text-base">
               Are you sure you want to delete this booking? This action cannot
               be undone.
             </p>
-            <div className="flex gap-3 justify-end">
+            <div className="flex gap-2 md:gap-3 justify-end">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="bg-neutral-700 hover:bg-neutral-600 text-white px-4 py-2 rounded transition"
+                className="bg-neutral-700 hover:bg-neutral-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded transition text-xs md:text-sm"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleDelete(deleteConfirm)}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded transition"
+                className="bg-red-600 hover:bg-red-700 text-white px-3 md:px-4 py-1.5 md:py-2 rounded transition text-xs md:text-sm"
               >
                 Delete
               </button>
