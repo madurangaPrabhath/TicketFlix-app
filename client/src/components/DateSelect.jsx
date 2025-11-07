@@ -43,8 +43,11 @@ const DateSelect = ({ dateTime, id }) => {
       return;
     }
 
-    navigate(`/movie/${id}/${id}`, {
-      state: { selectedDate: selectedDate }
+    const dateObj = new Date(selectedDate);
+    const formattedDate = dateObj.toISOString().split("T")[0];
+
+    navigate(`/movie/${id}/${formattedDate}`, {
+      state: { selectedDate: selectedDate },
     });
     window.scrollTo(0, 0);
   };
@@ -128,9 +131,7 @@ const DateSelect = ({ dateTime, id }) => {
                       <div className="text-xs font-semibold mb-2 uppercase">
                         {weekday}
                       </div>
-                      <div className="text-3xl font-bold mb-1">
-                        {day}
-                      </div>
+                      <div className="text-3xl font-bold mb-1">{day}</div>
                       <div className="text-xs uppercase opacity-80">
                         {month}
                       </div>

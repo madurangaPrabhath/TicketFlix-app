@@ -5,7 +5,7 @@ import { ArrowRight, Clock, Check, Calendar } from "lucide-react";
 import toast from "react-hot-toast";
 
 const SeatLayout = () => {
-  const { id, showId } = useParams();
+  const { id, date } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -15,7 +15,13 @@ const SeatLayout = () => {
   const [show, setShow] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const groupRows = [["A", "B"], ["C", "D"], ["E", "F"], ["G", "H"], ["I", "J"]];
+  const groupRows = [
+    ["A", "B"],
+    ["C", "D"],
+    ["E", "F"],
+    ["G", "H"],
+    ["I", "J"],
+  ];
 
   const bookedSeats = ["A1", "A2", "B5", "C3", "D7", "E2"];
 
@@ -52,11 +58,17 @@ const SeatLayout = () => {
   }, [id]);
 
   useEffect(() => {
-    if (location.state?.selectedDate) {
+    if (date) {
+      setSelectedDate(date);
+      console.log("Received date from URL:", date);
+    } else if (location.state?.selectedDate) {
       setSelectedDate(location.state.selectedDate);
-      console.log("Received date from previous page:", location.state.selectedDate);
+      console.log(
+        "Received date from previous page:",
+        location.state.selectedDate
+      );
     }
-  }, [location.state]);
+  }, [date, location.state]);
 
   const formatDate = (dateString) => {
     try {
@@ -213,9 +225,13 @@ const SeatLayout = () => {
 
               <div className="mb-6 sm:mb-8 md:mb-12 text-center">
                 <div className="inline-block px-4 sm:px-6 md:px-8 py-1.5 sm:py-2 bg-gradient-to-r from-gray-700 to-gray-600 rounded-full mb-2 sm:mb-3">
-                  <p className="text-white font-bold text-base sm:text-lg">SCREEN</p>
+                  <p className="text-white font-bold text-base sm:text-lg">
+                    SCREEN
+                  </p>
                 </div>
-                <p className="text-gray-500 text-xs sm:text-sm">↓ Screen is below ↓</p>
+                <p className="text-gray-500 text-xs sm:text-sm">
+                  ↓ Screen is below ↓
+                </p>
               </div>
 
               <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8 overflow-x-auto">
@@ -232,15 +248,21 @@ const SeatLayout = () => {
               <div className="flex flex-wrap gap-3 sm:gap-4 md:gap-6 justify-center pt-4 sm:pt-6 border-t border-neutral-700">
                 <div className="flex items-center gap-2">
                   <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-800 rounded border border-gray-700"></div>
-                  <span className="text-gray-400 text-xs sm:text-sm">Available</span>
+                  <span className="text-gray-400 text-xs sm:text-sm">
+                    Available
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-5 h-5 sm:w-6 sm:h-6 bg-green-600 rounded"></div>
-                  <span className="text-gray-400 text-xs sm:text-sm">Selected</span>
+                  <span className="text-gray-400 text-xs sm:text-sm">
+                    Selected
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-5 h-5 sm:w-6 sm:h-6 bg-red-600/50 rounded"></div>
-                  <span className="text-gray-400 text-xs sm:text-sm">Booked</span>
+                  <span className="text-gray-400 text-xs sm:text-sm">
+                    Booked
+                  </span>
                 </div>
               </div>
             </div>
@@ -279,7 +301,9 @@ const SeatLayout = () => {
                       Date
                     </p>
                     <p className="text-white font-semibold text-base sm:text-lg mt-1">
-                      {formatDate(selectedDate).weekday}, {formatDate(selectedDate).month} {formatDate(selectedDate).day}
+                      {formatDate(selectedDate).weekday},{" "}
+                      {formatDate(selectedDate).month}{" "}
+                      {formatDate(selectedDate).day}
                     </p>
                   </div>
                 ) : (
@@ -288,7 +312,9 @@ const SeatLayout = () => {
                       <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
                       Date
                     </p>
-                    <p className="text-gray-500 text-sm mt-1">Please select a date first</p>
+                    <p className="text-gray-500 text-sm mt-1">
+                      Please select a date first
+                    </p>
                   </div>
                 )}
 
@@ -303,7 +329,9 @@ const SeatLayout = () => {
                 </div>
 
                 <div>
-                  <p className="text-gray-400 text-xs uppercase tracking-wider">Selected Seats</p>
+                  <p className="text-gray-400 text-xs uppercase tracking-wider">
+                    Selected Seats
+                  </p>
                   <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2">
                     {selectedSeats.length > 0 ? (
                       selectedSeats.map((seat) => (
@@ -315,13 +343,17 @@ const SeatLayout = () => {
                         </span>
                       ))
                     ) : (
-                      <p className="text-gray-500 text-xs sm:text-sm">No seats selected</p>
+                      <p className="text-gray-500 text-xs sm:text-sm">
+                        No seats selected
+                      </p>
                     )}
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-gray-400 text-xs uppercase tracking-wider">Number of Seats</p>
+                  <p className="text-gray-400 text-xs uppercase tracking-wider">
+                    Number of Seats
+                  </p>
                   <p className="text-white font-semibold text-base sm:text-lg mt-1">
                     {selectedSeats.length}
                   </p>
@@ -330,7 +362,9 @@ const SeatLayout = () => {
 
               <div className="space-y-1.5 sm:space-y-2 mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-neutral-700">
                 <div className="flex justify-between text-xs sm:text-sm">
-                  <span className="text-gray-400">${ticketPrice.toFixed(2)} × {selectedSeats.length}</span>
+                  <span className="text-gray-400">
+                    ${ticketPrice.toFixed(2)} × {selectedSeats.length}
+                  </span>
                   <span className="text-white font-semibold">
                     ${(selectedSeats.length * ticketPrice).toFixed(2)}
                   </span>
@@ -344,7 +378,9 @@ const SeatLayout = () => {
               </div>
 
               <div className="flex justify-between mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-neutral-700">
-                <span className="text-white font-bold text-sm sm:text-base">Total</span>
+                <span className="text-white font-bold text-sm sm:text-base">
+                  Total
+                </span>
                 <span className="text-green-400 font-bold text-lg sm:text-xl">
                   ${grandTotal.toFixed(2)}
                 </span>
@@ -374,7 +410,9 @@ const SeatLayout = () => {
                     },
                   });
                 }}
-                disabled={selectedSeats.length === 0 || !selectedTime || !selectedDate}
+                disabled={
+                  selectedSeats.length === 0 || !selectedTime || !selectedDate
+                }
                 className={`w-full py-2.5 sm:py-3 rounded-lg font-bold transition-all duration-300 flex items-center justify-center gap-2 text-sm sm:text-base ${
                   selectedSeats.length > 0 && selectedTime && selectedDate
                     ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg shadow-green-600/30 hover:scale-105 active:scale-95"
