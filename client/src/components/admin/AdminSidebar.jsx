@@ -61,6 +61,7 @@ const AdminSidebar = () => {
             <NavLink
               key={index}
               to={link.path}
+              end={link.path === "/admin"}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-300 no-underline ${
                   isActive
