@@ -35,7 +35,6 @@ const AdminSidebar = () => {
 
   return (
     <div className="fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-neutral-900 via-neutral-900 to-black border-r border-neutral-800 pt-20 overflow-y-auto">
-      {/* User Profile Section */}
       <div className="px-6 py-8 border-b border-neutral-800">
         <div className="flex items-center gap-4 mb-4">
           <img
@@ -52,7 +51,6 @@ const AdminSidebar = () => {
         </div>
       </div>
 
-      {/* Navigation Links */}
       <nav className="px-3 py-6 space-y-2">
         <p className="text-gray-500 text-xs uppercase tracking-widest font-semibold px-3 mb-4">
           Main Menu
@@ -89,10 +87,8 @@ const AdminSidebar = () => {
         })}
       </nav>
 
-      {/* Divider */}
       <div className="border-t border-neutral-800 mx-3 my-6"></div>
 
-      {/* Logout Section */}
       <div className="px-3 pb-6">
         <button className="flex items-center gap-3 w-full px-4 py-3 rounded-lg font-medium text-gray-400 hover:text-white hover:bg-red-600/20 transition-all duration-300">
           <LogOut className="w-5 h-5 flex-shrink-0" />
