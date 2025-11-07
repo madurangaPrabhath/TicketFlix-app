@@ -10,6 +10,7 @@ import Favorite from './pages/Favorite'
 import { Toaster } from 'react-hot-toast'
 import Footer from './components/Footer'
 import { useUser } from '@clerk/clerk-react'
+import { Layout } from 'lucide-react'
 
 const App = () => {
   const isAdminRoute = useLocation().pathname.startsWith('/admin');
@@ -37,6 +38,12 @@ const App = () => {
         <Route path="/movie/:id/:date" element={<SeatLayout />} />
         <Route path="/booking" element={<Booking />} />
         <Route path="/favorite" element={<Favorite />} />
+        <Route path="/admin/*" element={<Layout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="add-shows" element={<AddShows />} />
+          <Route path="list-shows" element={<ListShows />} />
+          <Route path="list-bookings" element={<ListBookings />} />
+        </Route>
       </Routes>
       {!isAdminRoute && <Footer />}
     </>
