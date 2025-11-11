@@ -270,7 +270,6 @@ export const getNowPlayingMovies = async (req, res) => {
       });
     }
 
-    // Get unique movies from shows
     const movieIds = [
       ...new Set(shows.map((show) => show.movieId._id.toString())),
     ];
@@ -449,6 +448,61 @@ const determineSeatType = (row) => {
   if (vipRows.includes(row)) return "vip";
   if (premiumRows.includes(row)) return "premium";
   return "standard";
+};
+
+export const getShows = async (req, res) => {
+  try {
+    const shows = await Show.find()
+      .populate("movieId", "title poster_path backdrop_path")
+      .sort({ showDate: 1, showTime: 1 });
+
+    if (!shows || shows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No shows found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: shows,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching shows",
+      error: error.message,
+    });
+  }
+};
+
+export const getShow = async (req, res) => {
+  try {
+    const { movieId } = req.params;
+
+    const show = await Show.findById(movieId).populate(
+      "movieId",
+      "title poster_path backdrop_path runtime director cast"
+    );
+
+    if (!show) {
+      return res.status(404).json({
+        success: false,
+        message: "Show not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: show,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching show",
+      error: error.message,
+    });
+  }
 };
 
 export const getNowPlaingMovies = getNowPlayingMovies;
