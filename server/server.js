@@ -8,6 +8,7 @@ import { inngest, functions } from "./inngest/index.js";
 import showRouter from "./routes/showRoutes.js";
 import movieRouter from "./routes/movieRoutes.js";
 import bookingRouter from "./routes/bookingRoutes.js";
+import userRouter from "./routes/userRoutes.js";
 
 const app = express();
 const port = 3000;
@@ -23,6 +24,7 @@ app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use("/api/shows", showRouter);
 app.use("/api/movies", movieRouter);
 app.use("/api/bookings", bookingRouter);
+app.use("/api/users", userRouter);
 
 app.listen(port, () =>
   console.log(`Server listening at http://localhost:${port}`)
