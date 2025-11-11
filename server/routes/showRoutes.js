@@ -2,7 +2,6 @@ import express from "express";
 import {
   getNowPlaingMovies,
   upcomingMovies,
-  addShow,
   getShows,
   getShow,
   getShowsByMovieId,
@@ -27,7 +26,5 @@ showRouter.get("/details/:showId", getShowById);
 showRouter.get("/seats/:showId", getSeatAvailability);
 showRouter.post("/book/:showId", bookSeats);
 showRouter.post("/release/:showId", releaseSeats);
-
-showRouter.post("/add", addShow);
 
 export default showRouter;

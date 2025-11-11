@@ -1,15 +1,47 @@
 import Movie from "../models/Movie.js";
+import axios from "axios";
+
+const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+const TMDB_API_KEY = process.env.TMDB_API_KEY;
+const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
+
+const fetchFromTMDB = async (endpoint, params = {}) => {
+  try {
+    const response = await axios.get(`${TMDB_BASE_URL}${endpoint}`, {
+      params: {
+        api_key: TMDB_API_KEY,
+        ...params,
+      },
+      headers: {
+        Accept: "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error(
+      "TMDB API Error:",
+      error.response?.status,
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
 
 export const getAllMovies = async (req, res) => {
   try {
-    const movies = await Movie.find().sort({ release_date: -1 });
+    const tmdbData = await fetchFromTMDB("/movie/now_playing", {
+      page: 1,
+    });
 
-    if (!movies || movies.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No movies found",
-      });
-    }
+    const movies = tmdbData.results.map((movie) => ({
+      id: movie.id,
+      title: movie.title,
+      overview: movie.overview,
+      vote_average: movie.vote_average,
+      release_date: movie.release_date,
+      poster_path: `${IMAGE_BASE_URL}${movie.poster_path}`,
+      backdrop_path: `${IMAGE_BASE_URL}${movie.backdrop_path}`,
+    }));
 
     res.status(200).json({
       success: true,
@@ -18,8 +50,10 @@ export const getAllMovies = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error fetching movies",
+      message: "Error fetching movies from TMDB",
       error: error.message,
+      details: error.response?.data,
+      tmdbKeyExists: !!TMDB_API_KEY,
     });
   }
 };
@@ -28,19 +62,37 @@ export const getMovieById = async (req, res) => {
   try {
     const { movieId } = req.params;
 
-    const movie = await Movie.findById(movieId);
+    const isNumeric = /^\d+$/.test(movieId);
 
-    if (!movie) {
-      return res.status(404).json({
-        success: false,
-        message: "Movie not found",
+    if (isNumeric) {
+      const movieData = await fetchFromTMDB(`/movie/${movieId}`);
+      return res.status(200).json({
+        success: true,
+        data: {
+          id: movieData.id,
+          title: movieData.title,
+          overview: movieData.overview,
+          genres: movieData.genres.map((g) => g.name),
+          vote_average: movieData.vote_average,
+          release_date: movieData.release_date,
+          poster_path: `${IMAGE_BASE_URL}${movieData.poster_path}`,
+          backdrop_path: `${IMAGE_BASE_URL}${movieData.backdrop_path}`,
+          runtime: movieData.runtime,
+        },
+      });
+    } else {
+      const movie = await Movie.findById(movieId);
+      if (!movie) {
+        return res.status(404).json({
+          success: false,
+          message: "Movie not found",
+        });
+      }
+      return res.status(200).json({
+        success: true,
+        data: movie,
       });
     }
-
-    res.status(200).json({
-      success: true,
-      data: movie,
-    });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -61,13 +113,24 @@ export const searchMovies = async (req, res) => {
       });
     }
 
-    const movies = await Movie.find({
-      $or: [
-        { title: { $regex: q, $options: "i" } },
-        { overview: { $regex: q, $options: "i" } },
-        { genres: { $regex: q, $options: "i" } },
-      ],
+    const tmdbData = await fetchFromTMDB("/search/movie", {
+      query: q,
+      page: 1,
     });
+
+    const movies = tmdbData.results.map((movie) => ({
+      id: movie.id,
+      title: movie.title,
+      overview: movie.overview,
+      vote_average: movie.vote_average,
+      release_date: movie.release_date,
+      poster_path: movie.poster_path
+        ? `${IMAGE_BASE_URL}${movie.poster_path}`
+        : null,
+      backdrop_path: movie.backdrop_path
+        ? `${IMAGE_BASE_URL}${movie.backdrop_path}`
+        : null,
+    }));
 
     res.status(200).json({
       success: true,
@@ -93,9 +156,33 @@ export const filterByGenre = async (req, res) => {
       });
     }
 
-    const movies = await Movie.find({
-      genres: { $regex: genre, $options: "i" },
-    }).sort({ vote_average: -1 });
+    const genresData = await fetchFromTMDB("/genre/movie/list");
+    const genreObj = genresData.genres.find(
+      (g) => g.name.toLowerCase() === genre.toLowerCase()
+    );
+
+    if (!genreObj) {
+      return res.status(404).json({
+        success: false,
+        message: "Genre not found",
+      });
+    }
+
+    const tmdbData = await fetchFromTMDB("/discover/movie", {
+      with_genres: genreObj.id,
+      sort_by: "vote_average.desc",
+      page: 1,
+    });
+
+    const movies = tmdbData.results.map((movie) => ({
+      id: movie.id,
+      title: movie.title,
+      overview: movie.overview,
+      vote_average: movie.vote_average,
+      release_date: movie.release_date,
+      poster_path: `${IMAGE_BASE_URL}${movie.poster_path}`,
+      backdrop_path: `${IMAGE_BASE_URL}${movie.backdrop_path}`,
+    }));
 
     res.status(200).json({
       success: true,
@@ -112,7 +199,19 @@ export const filterByGenre = async (req, res) => {
 
 export const getTopRatedMovies = async (req, res) => {
   try {
-    const movies = await Movie.find().sort({ vote_average: -1 }).limit(10);
+    const tmdbData = await fetchFromTMDB("/movie/top_rated", {
+      page: 1,
+    });
+
+    const movies = tmdbData.results.map((movie) => ({
+      id: movie.id,
+      title: movie.title,
+      overview: movie.overview,
+      vote_average: movie.vote_average,
+      release_date: movie.release_date,
+      poster_path: `${IMAGE_BASE_URL}${movie.poster_path}`,
+      backdrop_path: `${IMAGE_BASE_URL}${movie.backdrop_path}`,
+    }));
 
     res.status(200).json({
       success: true,
@@ -131,14 +230,32 @@ export const getMoviesByStatus = async (req, res) => {
   try {
     const { status } = req.params;
 
-    if (!["released", "upcoming"].includes(status)) {
+    let endpoint;
+    if (status === "released") {
+      endpoint = "/movie/now_playing";
+    } else if (status === "upcoming") {
+      endpoint = "/movie/upcoming";
+    } else {
       return res.status(400).json({
         success: false,
         message: "Invalid status. Use 'released' or 'upcoming'",
       });
     }
 
-    const movies = await Movie.find({ status }).sort({ release_date: -1 });
+    const tmdbData = await fetchFromTMDB(endpoint, {
+      page: 1,
+    });
+
+    const movies = tmdbData.results.map((movie) => ({
+      id: movie.id,
+      title: movie.title,
+      overview: movie.overview,
+      vote_average: movie.vote_average,
+      release_date: movie.release_date,
+      poster_path: `${IMAGE_BASE_URL}${movie.poster_path}`,
+      backdrop_path: `${IMAGE_BASE_URL}${movie.backdrop_path}`,
+      status: status,
+    }));
 
     res.status(200).json({
       success: true,
@@ -216,6 +333,13 @@ export const updateMovie = async (req, res) => {
     const { movieId } = req.params;
     const updateData = req.body;
 
+    if (!movieId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid movie ID format. Use MongoDB ObjectId",
+      });
+    }
+
     const updatedMovie = await Movie.findByIdAndUpdate(movieId, updateData, {
       new: true,
       runValidators: true,
@@ -245,6 +369,13 @@ export const updateMovie = async (req, res) => {
 export const deleteMovie = async (req, res) => {
   try {
     const { movieId } = req.params;
+
+    if (!movieId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid movie ID format. Use MongoDB ObjectId",
+      });
+    }
 
     const deletedMovie = await Movie.findByIdAndDelete(movieId);
 
