@@ -7,7 +7,7 @@ import { serve } from "inngest/express";
 import { inngest, functions } from "./inngest/index.js";
 import showRouter from "./routes/showRoutes.js";
 import movieRouter from "./routes/movieRoutes.js";
-import bookingRouter from "./routes/bookingRouters.js";
+import bookingRouter from "./routes/bookingRoutes.js";
 
 const app = express();
 const port = 3000;
