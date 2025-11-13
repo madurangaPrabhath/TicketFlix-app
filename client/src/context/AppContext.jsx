@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { useAuth, useUser } from "@clerk/react";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import axios from "axios";
 
 const AppContext = createContext();

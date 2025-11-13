@@ -9,16 +9,17 @@ import Booking from "./pages/Bookings";
 import Favorite from "./pages/Favorite";
 import { Toaster } from "react-hot-toast";
 import Footer from "./components/Footer";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, SignIn } from "@clerk/clerk-react";
 import Layout from "./pages/admin/Layout";
 import Dashboard from "./pages/admin/Dashboard";
 import AddShows from "./pages/admin/AddShows";
 import ListShows from "./pages/admin/ListShows";
 import ListBookings from "./pages/admin/ListBookings";
+import { useAppContext } from "./context/AppContext";
 
 const App = () => {
   const isAdminRoute = useLocation().pathname.startsWith("/admin");
-  const { isLoaded } = useUser();
+  const { isLoaded, isSignedIn } = useUser();
 
   if (!isLoaded) {
     return (
@@ -42,7 +43,27 @@ const App = () => {
         <Route path="/movie/:id/:date" element={<SeatLayout />} />
         <Route path="/booking" element={<Booking />} />
         <Route path="/favorite" element={<Favorite />} />
-        <Route path="/admin/*" element={<Layout />}>
+        <Route
+          path="/admin/*"
+          element={
+            isSignedIn ? (
+              <Layout />
+            ) : (
+              <div className="min-h-screen bg-black flex items-center justify-center">
+                <SignIn
+                  appearance={{
+                    baseTheme: "dark",
+                    elements: {
+                      cardBox: "bg-gray-900 border border-red-600",
+                      formButtonPrimary: "bg-red-600 hover:bg-red-700",
+                    },
+                  }}
+                  fallbackRedirectUrl="/admin"
+                />
+              </div>
+            )
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="add-shows" element={<AddShows />} />
           <Route path="list-shows" element={<ListShows />} />
