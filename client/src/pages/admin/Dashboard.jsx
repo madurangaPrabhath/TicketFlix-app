@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { dummyDashboardData, dummyShowsData } from "../../assets/assets";
 import Title from "../../components/admin/Title";
+import { useAppContext } from "../../context/AppContext";
+import toast from "react-hot-toast";
 import {
   BarChart3,
   DollarSign,
@@ -12,6 +13,8 @@ import {
 } from "lucide-react";
 
 const Dashboard = () => {
+  const { fetchAdminDashboard, fetchNowPlayingShows, deleteShow } =
+    useAppContext();
   const [dashboardData, setDashboardData] = useState({
     totalBookings: 0,
     totalRevenue: 0,
@@ -20,7 +23,7 @@ const Dashboard = () => {
     activeShows: [],
   });
 
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   const dashboardCards = [
     {
@@ -54,8 +57,24 @@ const Dashboard = () => {
   ];
 
   const fetchDashboardData = async () => {
-    setDashboardData(dummyDashboardData);
-    setLoading(false);
+    try {
+      setIsLoading(true);
+      const adminDashboard = await fetchAdminDashboard();
+      const shows = await fetchNowPlayingShows();
+
+      setDashboardData({
+        totalBookings: adminDashboard?.totalBookings || 0,
+        totalRevenue: adminDashboard?.totalRevenue || 0,
+        totalShows: adminDashboard?.totalShows || 0,
+        totalUsers: adminDashboard?.totalUsers || 0,
+        activeShows: (shows || []).slice(0, 6),
+      });
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      toast.error("Failed to load dashboard data");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -75,7 +94,25 @@ const Dashboard = () => {
     }
   };
 
-  if (loading) {
+  const handleEditShow = (showId) => {
+    toast("Edit feature coming soon", { icon: "📝" });
+  };
+
+  const handleDeleteShow = async (showId) => {
+    try {
+      await deleteShow(showId);
+      setDashboardData((prev) => ({
+        ...prev,
+        activeShows: prev.activeShows.filter((show) => show._id !== showId),
+      }));
+      toast.success("Show deleted successfully");
+    } catch (error) {
+      console.error("Error deleting show:", error);
+      toast.error("Failed to delete show");
+    }
+  };
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -165,10 +202,16 @@ const Dashboard = () => {
                   </div>
 
                   <div className="flex gap-2 pt-3 border-t border-neutral-700 mt-auto">
-                    <button className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs md:text-sm font-medium transition-colors active:scale-95">
+                    <button
+                      onClick={() => handleEditShow(show._id)}
+                      className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs md:text-sm font-medium transition-colors active:scale-95"
+                    >
                       Edit
                     </button>
-                    <button className="flex-1 px-3 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-lg text-xs md:text-sm font-medium transition-colors active:scale-95">
+                    <button
+                      onClick={() => handleDeleteShow(show._id)}
+                      className="flex-1 px-3 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-lg text-xs md:text-sm font-medium transition-colors active:scale-95"
+                    >
                       Delete
                     </button>
                   </div>
