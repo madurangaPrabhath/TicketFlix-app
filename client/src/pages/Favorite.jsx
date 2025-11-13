@@ -10,36 +10,46 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import MovieCard from "../components/MovieCard";
-import { dummyShowsData } from "../assets/assets";
+import { useAppContext } from "../context/AppContext";
+import toast from "react-hot-toast";
 
 const Favorite = () => {
   const navigate = useNavigate();
-  const [favorites, setFavorites] = useState([]);
+  const { getUserFavorites, removeFromFavorites, favorites } = useAppContext();
+  const [favoritesList, setFavoritesList] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("recently-added");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setTimeout(() => {
-      const demoFavorites = dummyShowsData.slice(0, 3).map((movie, index) => ({
-        ...movie,
-        addedAt: new Date(
-          Date.now() - index * 24 * 60 * 60 * 1000
-        ).toISOString(),
-      }));
-      setFavorites(demoFavorites);
-      setIsLoading(false);
-    }, 800);
+    const loadFavorites = async () => {
+      try {
+        setIsLoading(true);
+        const userFavorites = await getUserFavorites();
+        setFavoritesList(userFavorites || []);
+      } catch (error) {
+        console.error("Error loading favorites:", error);
+        toast.error("Failed to load favorites");
+        setFavoritesList([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadFavorites();
   }, []);
 
-  const filteredFavorites = favorites
+  const filteredFavorites = favoritesList
     .filter((movie) =>
       movie.title.toLowerCase().includes(searchQuery.toLowerCase())
     )
     .sort((a, b) => {
       switch (sortBy) {
         case "recently-added":
-          return new Date(b.addedAt) - new Date(a.addedAt);
+          return (
+            new Date(b.createdAt || b.addedAt || 0) -
+            new Date(a.createdAt || a.addedAt || 0)
+          );
         case "title":
           return a.title.localeCompare(b.title);
         case "rating":
@@ -49,13 +59,33 @@ const Favorite = () => {
       }
     });
 
-  const handleRemoveFavorite = (movieId) => {
-    setFavorites(favorites.filter((movie) => movie._id !== movieId));
+  const handleRemoveFavorite = async (movieId) => {
+    try {
+      await removeFromFavorites(movieId);
+      setFavoritesList(favoritesList.filter((movie) => movie._id !== movieId));
+      toast.success("Removed from favorites");
+    } catch (error) {
+      console.error("Error removing favorite:", error);
+      toast.error("Failed to remove from favorites");
+    }
   };
 
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     if (window.confirm("Are you sure you want to remove all favorites?")) {
-      setFavorites([]);
+      try {
+        setIsLoading(true);
+        // Remove all favorites one by one
+        for (const movie of favoritesList) {
+          await removeFromFavorites(movie._id);
+        }
+        setFavoritesList([]);
+        toast.success("All favorites cleared");
+      } catch (error) {
+        console.error("Error clearing favorites:", error);
+        toast.error("Failed to clear favorites");
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -92,12 +122,12 @@ const Favorite = () => {
             My Favorites
           </h1>
           <p className="text-gray-400 text-sm md:text-base">
-            {favorites.length} {favorites.length === 1 ? "movie" : "movies"}{" "}
-            saved
+            {favoritesList.length}{" "}
+            {favoritesList.length === 1 ? "movie" : "movies"} saved
           </p>
         </div>
 
-        {favorites.length > 0 ? (
+        {favoritesList.length > 0 ? (
           <>
             <div className="mb-8 space-y-4">
               <div className="flex flex-col md:flex-row gap-4">
