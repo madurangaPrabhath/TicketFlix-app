@@ -1,15 +1,29 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, Calendar, Clock } from "lucide-react";
+import { Star, Calendar, Clock, Heart } from "lucide-react";
+import { useAppContext } from "../context/AppContext";
+import toast from "react-hot-toast";
 
 const MovieCard = ({ movie }) => {
   const navigate = useNavigate();
+  const { addToFavorites, removeFromFavorites, favorites } = useAppContext();
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const formatRuntime = (minutes) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}h ${mins}m`;
   };
+
+  useEffect(() => {
+    if (favorites && Array.isArray(favorites)) {
+      const isFav = favorites.some(
+        (fav) => fav._id === movie._id || fav.id === movie.id
+      );
+      setIsFavorited(isFav);
+    }
+  }, [favorites, movie._id, movie.id]);
 
   const genreString =
     movie.genres
@@ -30,6 +44,27 @@ const MovieCard = ({ movie }) => {
     e.stopPropagation();
     navigate(`/movies/${movie._id}`);
     window.scrollTo(0, 0);
+  };
+
+  const handleToggleFavorite = async (e) => {
+    e.stopPropagation();
+    try {
+      setIsLoading(true);
+      if (isFavorited) {
+        await removeFromFavorites(movie._id || movie.id);
+        setIsFavorited(false);
+        toast.success("Removed from favorites");
+      } else {
+        await addToFavorites(movie._id || movie.id);
+        setIsFavorited(true);
+        toast.success("Added to favorites");
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      toast.error("Failed to update favorites");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -78,6 +113,21 @@ const MovieCard = ({ movie }) => {
             {movie.vote_average?.toFixed(1) || "N/A"}
           </span>
         </div>
+
+        <button
+          onClick={handleToggleFavorite}
+          disabled={isLoading}
+          className="absolute top-2 left-2 p-2 bg-black/80 backdrop-blur-sm rounded-full hover:bg-black transition-all duration-300 disabled:opacity-50"
+          title={isFavorited ? "Remove from favorites" : "Add to favorites"}
+        >
+          <Heart
+            className={`w-4 h-4 transition-all duration-300 ${
+              isFavorited
+                ? "fill-red-600 text-red-600"
+                : "text-gray-300 hover:text-red-600"
+            }`}
+          />
+        </button>
       </div>
 
       <h3
