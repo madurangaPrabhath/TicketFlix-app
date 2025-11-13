@@ -1,30 +1,78 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
-import { dummyShowsData } from '../assets/assets';
-import MovieCard from './MovieCard';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
+import { useAppContext } from "../context/AppContext";
+import MovieCard from "./MovieCard";
 
 const FeaturedSection = () => {
   const navigate = useNavigate();
-  
-  const featuredMovies = dummyShowsData.slice(0, 6).map(movie => ({
-    ...movie,
-    poster: movie.poster_path,
-  }));
+  const { fetchAllMovies } = useAppContext();
+  const [featuredMovies, setFeaturedMovies] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadFeaturedMovies = async () => {
+      try {
+        const movies = await fetchAllMovies();
+        setFeaturedMovies((movies || []).slice(0, 6));
+      } catch (error) {
+        console.error("Error loading featured movies:", error);
+        setFeaturedMovies([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadFeaturedMovies();
+  }, [fetchAllMovies]);
 
   const handleViewAll = () => {
-    navigate('/movies');
+    navigate("/movies");
     window.scrollTo(0, 0);
   };
+
+  if (isLoading) {
+    return (
+      <section className="px-6 md:px-16 lg:px-36 py-16 bg-black">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-1 h-8 bg-red-600 rounded-full"></div>
+          <h2 className="text-2xl md:text-3xl font-bold text-white">
+            Now Showing
+          </h2>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+        </div>
+      </section>
+    );
+  }
+
+  if (featuredMovies.length === 0) {
+    return (
+      <section className="px-6 md:px-16 lg:px-36 py-16 bg-black">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-1 h-8 bg-red-600 rounded-full"></div>
+          <h2 className="text-2xl md:text-3xl font-bold text-white">
+            Now Showing
+          </h2>
+        </div>
+        <div className="text-center text-gray-400 py-12">
+          <p>No movies available at the moment</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="px-6 md:px-16 lg:px-36 py-16 bg-black">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
           <div className="w-1 h-8 bg-red-600 rounded-full"></div>
-          <h2 className="text-2xl md:text-3xl font-bold text-white">Now Showing</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-white">
+            Now Showing
+          </h2>
         </div>
-        <button 
+        <button
           onClick={handleViewAll}
           className="flex items-center gap-2 text-red-600 hover:text-red-700 font-semibold transition-colors duration-300 group"
           aria-label="View all movies"
