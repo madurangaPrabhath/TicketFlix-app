@@ -1,14 +1,18 @@
 import React from "react";
-import { Edit2, Trash2, Search } from "lucide-react";
+import { Edit2, Trash2, Search, AlertCircle } from "lucide-react";
 import Title from "../../components/admin/Title";
-import { dummyShowsData, dummyDashboardData } from "../../assets/assets";
+import { useAppContext } from "../../context/AppContext";
+import toast from "react-hot-toast";
 
 const ListShows = () => {
+  const { fetchNowPlayingShows, updateShow, deleteShow } = useAppContext();
   const [shows, setShows] = React.useState([]);
   const [filteredShows, setFilteredShows] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [deleteConfirm, setDeleteConfirm] = React.useState(null);
+  const [editingId, setEditingId] = React.useState(null);
+  const [editingShow, setEditingShow] = React.useState(null);
 
   const formatDateTime = (dateStr) => {
     const date = new Date(dateStr);
@@ -23,21 +27,15 @@ const ListShows = () => {
 
   const getAllShows = async () => {
     try {
-      const allShows = dummyDashboardData.activeShows.map((show) => ({
-        _id: show.movie.id,
-        movie: show.movie,
-        showDateTime: show.date,
-        showPrice: show.price,
-        seatsBooked: Math.floor(Math.random() * 45) + 10,
-        totalSeats: 90,
-      }));
-
-      setShows(allShows);
-      setFilteredShows(allShows);
+      setIsLoading(true);
+      const allShows = await fetchNowPlayingShows();
+      setShows(allShows || []);
+      setFilteredShows(allShows || []);
     } catch (error) {
       console.error("Error fetching shows:", error);
+      toast.error("Failed to load shows");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -48,20 +46,51 @@ const ListShows = () => {
     setFilteredShows(filtered);
   }, [searchTerm, shows]);
 
-  const handleDelete = (id) => {
-    setShows(shows.filter((show) => show._id !== id));
-    setDeleteConfirm(null);
+  const handleDelete = async (id) => {
+    try {
+      setIsLoading(true);
+      await deleteShow(id);
+      setShows(shows.filter((show) => show._id !== id));
+      setDeleteConfirm(null);
+      toast.success("Show deleted successfully");
+    } catch (error) {
+      console.error("Error deleting show:", error);
+      toast.error("Failed to delete show");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleEdit = (id) => {
-    alert(`Edit show ${id} - Feature to be implemented`);
+  const handleEdit = (show) => {
+    setEditingId(show._id);
+    setEditingShow({ ...show });
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      if (!editingShow.showTime || !editingShow.showDate) {
+        toast.error("Please fill in all required fields");
+        return;
+      }
+      setIsLoading(true);
+      await updateShow(editingId, editingShow);
+      setShows(shows.map((s) => (s._id === editingId ? editingShow : s)));
+      setEditingId(null);
+      setEditingShow(null);
+      toast.success("Show updated successfully");
+    } catch (error) {
+      console.error("Error updating show:", error);
+      toast.error("Failed to update show");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   React.useEffect(() => {
     getAllShows();
   }, []);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-600"></div>
@@ -154,7 +183,7 @@ const ListShows = () => {
                   <td className="p-2 md:p-3 lg:p-4">
                     <div className="flex gap-1 md:gap-2 lg:gap-2">
                       <button
-                        onClick={() => handleEdit(show._id)}
+                        onClick={() => handleEdit(show)}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-2 md:px-3 py-1 md:py-2 rounded transition flex items-center gap-1 text-xs md:text-sm flex-shrink-0"
                       >
                         <Edit2 size={14} className="md:size-4" />
@@ -207,6 +236,133 @@ const ListShows = () => {
                 className="bg-red-600 hover:bg-red-700 text-white px-3 md:px-4 py-1.5 md:py-2 rounded transition text-xs md:text-sm"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editingId && editingShow && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-neutral-900 rounded-lg p-4 md:p-6 max-w-2xl w-full border border-neutral-700 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-base md:text-lg lg:text-xl font-bold text-white mb-4 md:mb-6">
+              Edit Show
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
+              <div>
+                <label className="block text-gray-300 text-xs md:text-sm font-semibold mb-2">
+                  Show Date
+                </label>
+                <input
+                  type="date"
+                  value={editingShow.showDate || ""}
+                  onChange={(e) =>
+                    setEditingShow({
+                      ...editingShow,
+                      showDate: e.target.value,
+                    })
+                  }
+                  className="w-full bg-neutral-800 text-white px-3 md:px-4 py-2 md:py-3 rounded-lg border border-neutral-700 outline-none focus:border-blue-600 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-300 text-xs md:text-sm font-semibold mb-2">
+                  Show Time
+                </label>
+                <input
+                  type="time"
+                  value={editingShow.showTime || ""}
+                  onChange={(e) =>
+                    setEditingShow({
+                      ...editingShow,
+                      showTime: e.target.value,
+                    })
+                  }
+                  className="w-full bg-neutral-800 text-white px-3 md:px-4 py-2 md:py-3 rounded-lg border border-neutral-700 outline-none focus:border-blue-600 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-6">
+              <div>
+                <label className="block text-gray-300 text-xs md:text-sm font-semibold mb-2">
+                  Standard Price
+                </label>
+                <input
+                  type="number"
+                  value={editingShow.pricing?.standard || ""}
+                  onChange={(e) =>
+                    setEditingShow({
+                      ...editingShow,
+                      pricing: {
+                        ...editingShow.pricing,
+                        standard: parseFloat(e.target.value),
+                      },
+                    })
+                  }
+                  className="w-full bg-neutral-800 text-white px-3 md:px-4 py-2 md:py-3 rounded-lg border border-neutral-700 outline-none focus:border-blue-600 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-300 text-xs md:text-sm font-semibold mb-2">
+                  Premium Price
+                </label>
+                <input
+                  type="number"
+                  value={editingShow.pricing?.premium || ""}
+                  onChange={(e) =>
+                    setEditingShow({
+                      ...editingShow,
+                      pricing: {
+                        ...editingShow.pricing,
+                        premium: parseFloat(e.target.value),
+                      },
+                    })
+                  }
+                  className="w-full bg-neutral-800 text-white px-3 md:px-4 py-2 md:py-3 rounded-lg border border-neutral-700 outline-none focus:border-blue-600 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-300 text-xs md:text-sm font-semibold mb-2">
+                  VIP Price
+                </label>
+                <input
+                  type="number"
+                  value={editingShow.pricing?.vip || ""}
+                  onChange={(e) =>
+                    setEditingShow({
+                      ...editingShow,
+                      pricing: {
+                        ...editingShow.pricing,
+                        vip: parseFloat(e.target.value),
+                      },
+                    })
+                  }
+                  className="w-full bg-neutral-800 text-white px-3 md:px-4 py-2 md:py-3 rounded-lg border border-neutral-700 outline-none focus:border-blue-600 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 md:gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setEditingId(null);
+                  setEditingShow(null);
+                }}
+                className="bg-neutral-700 hover:bg-neutral-600 text-white px-3 md:px-4 py-1.5 md:py-2 rounded transition text-xs md:text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={isLoading}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white px-3 md:px-4 py-1.5 md:py-2 rounded transition text-xs md:text-sm"
+              >
+                {isLoading ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </div>
