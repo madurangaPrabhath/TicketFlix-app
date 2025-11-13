@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Trash2, Download, CheckCircle, Clock, Search } from "lucide-react";
-import { dummyBookingData } from "../../assets/assets";
 import Title from "../../components/admin/Title";
+import { useAppContext } from "../../context/AppContext";
+import toast from "react-hot-toast";
 
 const ListBookings = () => {
+  const { fetchAllBookings, cancelBooking } = useAppContext();
   const [bookings, setBookings] = useState([]);
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,18 +26,73 @@ const ListBookings = () => {
 
   const getAllBookings = async () => {
     try {
-      setBookings(dummyBookingData);
-      setFilteredBookings(dummyBookingData);
+      setIsLoading(true);
+      const allBookings = await fetchAllBookings();
+      setBookings(allBookings || []);
+      setFilteredBookings(allBookings || []);
     } catch (error) {
       console.error("Error fetching bookings:", error);
+      toast.error("Failed to load bookings");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDelete = (id) => {
-    setBookings(bookings.filter((booking) => booking._id !== id));
-    setDeleteConfirm(null);
+  const handleDelete = async (id) => {
+    try {
+      setIsLoading(true);
+      await cancelBooking(id);
+      setBookings(bookings.filter((booking) => booking._id !== id));
+      setDeleteConfirm(null);
+      toast.success("Booking deleted successfully");
+    } catch (error) {
+      console.error("Error deleting booking:", error);
+      toast.error("Failed to delete booking");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDownloadReceipt = (booking) => {
+    try {
+      // Create receipt content
+      const receiptContent = `
+TicketFlix Booking Receipt
+========================================
+
+Booking ID: ${booking._id}
+User: ${booking.user.name}
+Email: ${booking.user.email}
+
+Movie: ${booking.show.movie.title}
+Show Date: ${formatDateTime(booking.show.showDateTime)}
+
+Seats: ${booking.bookedSeats.join(", ")}
+Total Amount: $${booking.amount}
+Payment Status: ${booking.isPaid ? "Paid" : "Unpaid"}
+
+Booking Date: ${formatDateTime(booking.createdAt)}
+
+========================================
+Thank you for your booking!
+      `.trim();
+
+      // Create blob and download
+      const element = document.createElement("a");
+      element.setAttribute(
+        "href",
+        "data:text/plain;charset=utf-8," + encodeURIComponent(receiptContent)
+      );
+      element.setAttribute("download", `receipt_${booking._id}.txt`);
+      element.style.display = "none";
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+      toast.success("Receipt downloaded");
+    } catch (error) {
+      console.error("Error downloading receipt:", error);
+      toast.error("Failed to download receipt");
+    }
   };
 
   useEffect(() => {
@@ -215,6 +272,7 @@ const ListBookings = () => {
                   <td className="p-2 md:p-3 lg:p-4">
                     <div className="flex gap-1 md:gap-2">
                       <button
+                        onClick={() => handleDownloadReceipt(booking)}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-2 md:px-3 py-1 md:py-2 rounded transition flex items-center gap-1 text-xs md:text-sm flex-shrink-0"
                         title="Download Receipt"
                       >
