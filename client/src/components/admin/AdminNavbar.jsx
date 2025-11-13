@@ -33,7 +33,6 @@ const AdminNavbar = () => {
         <div className="flex-1"></div>
 
         <div className="flex items-center gap-6 shrink-0">
-          {/* Notifications Dropdown */}
           <div className="relative">
             <button
               onClick={() => {
@@ -89,7 +88,6 @@ const AdminNavbar = () => {
             )}
           </div>
 
-          {/* Settings Dropdown */}
           <div className="relative">
             <button
               onClick={() => {
@@ -138,7 +136,6 @@ const AdminNavbar = () => {
               <p className="text-gray-400 text-xs">Administrator</p>
             </div>
 
-            {/* Clerk User Profile Button */}
             <div className="flex items-center gap-2">
               <UserButton
                 appearance={{
