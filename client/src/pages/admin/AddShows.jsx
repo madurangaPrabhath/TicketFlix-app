@@ -9,32 +9,41 @@ import {
   Trash2,
   AlertCircle,
 } from "lucide-react";
-import { dummyShowsData } from "../../assets/assets";
 import Title from "../../components/admin/Title";
 import toast from "react-hot-toast";
+import { useAppContext } from "../../context/AppContext";
 
 const AddShows = () => {
+  const { fetchAllMovies, createShow, loading } = useAppContext();
   const [movies, setMovies] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedMovie, setSelectedMovie] = useState(null);
-  const [showPrice, setShowPrice] = useState("");
+  const [theater, setTheater] = useState("");
+  const [city, setCity] = useState("");
+  const [language, setLanguage] = useState("English");
+  const [format, setFormat] = useState("2D");
+  const [standardPrice, setStandardPrice] = useState("");
+  const [premiumPrice, setPremiumPrice] = useState("");
+  const [vipPrice, setVipPrice] = useState("");
   const [dateTimeInput, setDateTimeInput] = useState("");
   const [selectedTimes, setSelectedTimes] = useState([]);
   const [errors, setErrors] = useState({});
 
-  const fetchNowPlayingMovies = async () => {
+  const fetchMovies = async () => {
     try {
-      setMovies(dummyShowsData);
+      setIsLoading(true);
+      const data = await fetchAllMovies();
+      setMovies(data || []);
     } catch (error) {
       console.error("Error fetching movies:", error);
       toast.error("Failed to fetch movies");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchNowPlayingMovies();
+    fetchMovies();
   }, []);
 
   const handleMovieSelect = (movie) => {
@@ -46,8 +55,21 @@ const AddShows = () => {
     const priceNum = parseFloat(price);
     if (!price) return "Price is required";
     if (isNaN(priceNum) || priceNum <= 0) return "Price must be greater than 0";
-    if (priceNum > 999) return "Price must be less than 999";
+    if (priceNum > 99999) return "Price must be less than 99999";
     return "";
+  };
+
+  const validateTheaterDetails = () => {
+    const newErrors = {};
+    if (!theater.trim()) newErrors.theater = "Theater name is required";
+    if (!city.trim()) newErrors.city = "City is required";
+    const standardError = validatePrice(standardPrice);
+    if (standardError) newErrors.standardPrice = standardError;
+    const premiumError = validatePrice(premiumPrice);
+    if (premiumError) newErrors.premiumPrice = premiumError;
+    const vipError = validatePrice(vipPrice);
+    if (vipError) newErrors.vipPrice = vipError;
+    return newErrors;
   };
 
   const handleDateTimeAdd = () => {
@@ -97,8 +119,10 @@ const AddShows = () => {
     const newErrors = {};
 
     if (!selectedMovie) newErrors.movie = "Please select a movie";
-    const priceError = validatePrice(showPrice);
-    if (priceError) newErrors.price = priceError;
+
+    const theaterErrors = validateTheaterDetails();
+    Object.assign(newErrors, theaterErrors);
+
     if (selectedTimes.length === 0)
       newErrors.times = "Please add at least one time slot";
 
@@ -108,25 +132,54 @@ const AddShows = () => {
     }
 
     try {
-      console.log({
-        movie: selectedMovie,
-        price: parseFloat(showPrice),
-        times: selectedTimes,
-      });
+      for (const timeSlot of selectedTimes) {
+        const [date, time] = timeSlot.split("T");
 
-      toast.success("Show added successfully!");
+        const showData = {
+          movieId: selectedMovie.id,
+          theater: {
+            name: theater,
+            location: city,
+            city: city,
+          },
+          showDate: date,
+          showTime: time,
+          language,
+          format,
+          seats: {
+            total: 150,
+            available: 150,
+          },
+          pricing: {
+            standard: parseFloat(standardPrice),
+            premium: parseFloat(premiumPrice),
+            vip: parseFloat(vipPrice),
+          },
+        };
+
+        await createShow(showData);
+      }
+
+      toast.success(`Show(s) added successfully for ${selectedMovie.title}!`);
 
       setSelectedMovie(null);
-      setShowPrice("");
+      setTheater("");
+      setCity("");
+      setLanguage("English");
+      setFormat("2D");
+      setStandardPrice("");
+      setPremiumPrice("");
+      setVipPrice("");
       setSelectedTimes([]);
       setDateTimeInput("");
       setErrors({});
     } catch (error) {
+      console.error("Error adding show:", error);
       toast.error("Failed to add show");
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-600"></div>
@@ -238,35 +291,190 @@ const AddShows = () => {
               </div>
             )}
 
-            <div className="mb-6">
-              <label className="block text-gray-300 text-xs md:text-sm font-semibold mb-2 md:mb-3">
-                Show Price ($)
-              </label>
-              <div className="relative">
-                <DollarSign
-                  size={18}
-                  className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-gray-500"
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
+              <div>
+                <label className="block text-gray-300 text-xs md:text-sm font-semibold mb-2 md:mb-3">
+                  Theater Name
+                </label>
                 <input
-                  type="number"
-                  placeholder="0.00"
-                  value={showPrice}
+                  type="text"
+                  placeholder="e.g., PVR Cinemas, INOX"
+                  value={theater}
                   onChange={(e) => {
-                    setShowPrice(e.target.value);
-                    setErrors({ ...errors, price: "" });
+                    setTheater(e.target.value);
+                    setErrors({ ...errors, theater: "" });
                   }}
-                  className={`w-full bg-neutral-800 text-white pl-10 md:pl-11 pr-3 md:pr-4 py-2 md:py-3 rounded-lg border outline-none transition focus:ring-2 text-sm ${
-                    errors.price
+                  className={`w-full bg-neutral-800 text-white px-3 md:px-4 py-2 md:py-3 rounded-lg border outline-none transition focus:ring-2 text-sm ${
+                    errors.theater
                       ? "border-red-600 focus:ring-red-500/50"
                       : "border-neutral-700 focus:border-red-600 focus:ring-red-500/30"
                   }`}
                 />
+                {errors.theater && (
+                  <p className="text-red-400 text-xs mt-1 md:mt-2 flex items-center gap-1">
+                    <AlertCircle size={14} /> {errors.theater}
+                  </p>
+                )}
               </div>
-              {errors.price && (
-                <p className="text-red-400 text-xs mt-1 md:mt-2 flex items-center gap-1">
-                  <AlertCircle size={14} /> {errors.price}
-                </p>
-              )}
+
+              <div>
+                <label className="block text-gray-300 text-xs md:text-sm font-semibold mb-2 md:mb-3">
+                  City
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., Bangalore, Mumbai"
+                  value={city}
+                  onChange={(e) => {
+                    setCity(e.target.value);
+                    setErrors({ ...errors, city: "" });
+                  }}
+                  className={`w-full bg-neutral-800 text-white px-3 md:px-4 py-2 md:py-3 rounded-lg border outline-none transition focus:ring-2 text-sm ${
+                    errors.city
+                      ? "border-red-600 focus:ring-red-500/50"
+                      : "border-neutral-700 focus:border-red-600 focus:ring-red-500/30"
+                  }`}
+                />
+                {errors.city && (
+                  <p className="text-red-400 text-xs mt-1 md:mt-2 flex items-center gap-1">
+                    <AlertCircle size={14} /> {errors.city}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-gray-300 text-xs md:text-sm font-semibold mb-2 md:mb-3">
+                  Language
+                </label>
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="w-full bg-neutral-800 text-white px-3 md:px-4 py-2 md:py-3 rounded-lg border border-neutral-700 outline-none transition focus:ring-2 focus:border-red-600 focus:ring-red-500/30 text-sm"
+                >
+                  <option>English</option>
+                  <option>Hindi</option>
+                  <option>Tamil</option>
+                  <option>Telugu</option>
+                  <option>Kannada</option>
+                  <option>Malayalam</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-gray-300 text-xs md:text-sm font-semibold mb-2 md:mb-3">
+                  Format
+                </label>
+                <select
+                  value={format}
+                  onChange={(e) => setFormat(e.target.value)}
+                  className="w-full bg-neutral-800 text-white px-3 md:px-4 py-2 md:py-3 rounded-lg border border-neutral-700 outline-none transition focus:ring-2 focus:border-red-600 focus:ring-red-500/30 text-sm"
+                >
+                  <option>2D</option>
+                  <option>3D</option>
+                  <option>IMAX</option>
+                  <option>4DX</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <h3 className="text-gray-300 text-sm font-semibold mb-4">
+                Pricing
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                <div>
+                  <label className="block text-gray-300 text-xs md:text-sm font-semibold mb-2 md:mb-3">
+                    Standard Seats ($)
+                  </label>
+                  <div className="relative">
+                    <DollarSign
+                      size={18}
+                      className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-gray-500"
+                    />
+                    <input
+                      type="number"
+                      placeholder="0.00"
+                      value={standardPrice}
+                      onChange={(e) => {
+                        setStandardPrice(e.target.value);
+                        setErrors({ ...errors, standardPrice: "" });
+                      }}
+                      className={`w-full bg-neutral-800 text-white pl-10 md:pl-11 pr-3 md:pr-4 py-2 md:py-3 rounded-lg border outline-none transition focus:ring-2 text-sm ${
+                        errors.standardPrice
+                          ? "border-red-600 focus:ring-red-500/50"
+                          : "border-neutral-700 focus:border-red-600 focus:ring-red-500/30"
+                      }`}
+                    />
+                  </div>
+                  {errors.standardPrice && (
+                    <p className="text-red-400 text-xs mt-1 md:mt-2 flex items-center gap-1">
+                      <AlertCircle size={14} /> {errors.standardPrice}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 text-xs md:text-sm font-semibold mb-2 md:mb-3">
+                    Premium Seats ($)
+                  </label>
+                  <div className="relative">
+                    <DollarSign
+                      size={18}
+                      className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-gray-500"
+                    />
+                    <input
+                      type="number"
+                      placeholder="0.00"
+                      value={premiumPrice}
+                      onChange={(e) => {
+                        setPremiumPrice(e.target.value);
+                        setErrors({ ...errors, premiumPrice: "" });
+                      }}
+                      className={`w-full bg-neutral-800 text-white pl-10 md:pl-11 pr-3 md:pr-4 py-2 md:py-3 rounded-lg border outline-none transition focus:ring-2 text-sm ${
+                        errors.premiumPrice
+                          ? "border-red-600 focus:ring-red-500/50"
+                          : "border-neutral-700 focus:border-red-600 focus:ring-red-500/30"
+                      }`}
+                    />
+                  </div>
+                  {errors.premiumPrice && (
+                    <p className="text-red-400 text-xs mt-1 md:mt-2 flex items-center gap-1">
+                      <AlertCircle size={14} /> {errors.premiumPrice}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 text-xs md:text-sm font-semibold mb-2 md:mb-3">
+                    VIP Seats ($)
+                  </label>
+                  <div className="relative">
+                    <DollarSign
+                      size={18}
+                      className="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-gray-500"
+                    />
+                    <input
+                      type="number"
+                      placeholder="0.00"
+                      value={vipPrice}
+                      onChange={(e) => {
+                        setVipPrice(e.target.value);
+                        setErrors({ ...errors, vipPrice: "" });
+                      }}
+                      className={`w-full bg-neutral-800 text-white pl-10 md:pl-11 pr-3 md:pr-4 py-2 md:py-3 rounded-lg border outline-none transition focus:ring-2 text-sm ${
+                        errors.vipPrice
+                          ? "border-red-600 focus:ring-red-500/50"
+                          : "border-neutral-700 focus:border-red-600 focus:ring-red-500/30"
+                      }`}
+                    />
+                  </div>
+                  {errors.vipPrice && (
+                    <p className="text-red-400 text-xs mt-1 md:mt-2 flex items-center gap-1">
+                      <AlertCircle size={14} /> {errors.vipPrice}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="mb-6">

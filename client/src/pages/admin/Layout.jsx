@@ -1,20 +1,28 @@
 import React, { useState, useEffect } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import AdminNavbar from "../../components/admin/AdminNavbar";
 import AdminSidebar from "../../components/admin/AdminSidebar";
 import { Menu, X } from "lucide-react";
 import { useAppContext } from "../../context/AppContext";
 
 const Layout = () => {
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isAdmin, loading } = useAppContext();
+
+  useEffect(() => {
+    if (!loading && !isAdmin) {
+      const timer = setTimeout(() => navigate("/"), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, isAdmin, navigate]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white text-lg">Loading...</p>
+          <p className="text-white text-lg">Verifying admin access...</p>
         </div>
       </div>
     );
@@ -26,6 +34,7 @@ const Layout = () => {
         <div className="text-center">
           <p className="text-white text-xl font-semibold mb-2">Access Denied</p>
           <p className="text-gray-400">You don't have admin privileges</p>
+          <p className="text-gray-500 text-sm mt-4">Redirecting...</p>
         </div>
       </div>
     );

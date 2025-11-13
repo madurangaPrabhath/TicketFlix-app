@@ -62,7 +62,6 @@ export const AppContextProvider = ({ children }) => {
   useEffect(() => {
     if (isLoaded && isSignedIn && userId) {
       initializeUser();
-      checkAdminStatus();
     }
   }, [isLoaded, isSignedIn, userId]);
 
@@ -70,6 +69,7 @@ export const AppContextProvider = ({ children }) => {
     try {
       setLoading(true);
       if (userId) {
+        await checkAdminStatus();
         await fetchUserProfile(userId);
         await fetchUserDashboard(userId);
       }
@@ -82,11 +82,18 @@ export const AppContextProvider = ({ children }) => {
 
   const checkAdminStatus = async () => {
     try {
-      if (clerkUser?.privateMetadata?.role === "admin") {
+      const response = await axiosInstance.get("/users/verify/admin-status");
+      if (response.data.success && response.data.isAdmin) {
         setIsAdmin(true);
+        return true;
+      } else {
+        setIsAdmin(false);
+        return false;
       }
     } catch (err) {
       console.error("Error checking admin status:", err);
+      setIsAdmin(false);
+      return false;
     }
   };
 
@@ -648,6 +655,43 @@ export const AppContextProvider = ({ children }) => {
     setSelectedSeats([]);
   };
 
+  const fetchAdminProfile = async () => {
+    try {
+      const response = await axiosInstance.get("/users/admin/profile");
+      return response.data.data;
+    } catch (err) {
+      console.error("Error fetching admin profile:", err);
+      return null;
+    }
+  };
+
+  const updateAdminProfile = async (profileData) => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.put(
+        "/users/admin/profile",
+        profileData
+      );
+      handleSuccess("Admin profile updated!");
+      return response.data.data;
+    } catch (err) {
+      handleError(err, "Failed to update admin profile");
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAdminPermissions = async () => {
+    try {
+      const response = await axiosInstance.get("/users/admin/permissions");
+      return response.data.data;
+    } catch (err) {
+      console.error("Error fetching admin permissions:", err);
+      return null;
+    }
+  };
+
   const value = {
     isSignedIn,
     isLoaded,
@@ -734,6 +778,10 @@ export const AppContextProvider = ({ children }) => {
     addSeat,
     removeSeat,
     clearSeats,
+
+    fetchAdminProfile,
+    updateAdminProfile,
+    fetchAdminPermissions,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
