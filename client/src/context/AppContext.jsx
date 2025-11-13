@@ -44,9 +44,19 @@ export const AppContextProvider = ({ children }) => {
 
   const BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:3000/api";
 
+  // Create axios instance with proper configuration
   const axiosInstance = axios.create({
     baseURL: BASE_URL,
+    timeout: 10000,
+    headers: {
+      "Content-Type": "application/json",
+    },
   });
+
+  // Log BASE_URL for debugging
+  useEffect(() => {
+    console.log("AppContext initialized with BASE_URL:", BASE_URL);
+  }, []);
 
   const handleError = (error, message = "An error occurred") => {
     console.error(message, error);

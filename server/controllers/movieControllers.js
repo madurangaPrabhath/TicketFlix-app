@@ -29,31 +29,57 @@ const fetchFromTMDB = async (endpoint, params = {}) => {
 
 export const getAllMovies = async (req, res) => {
   try {
-    const tmdbData = await fetchFromTMDB("/movie/now_playing", {
-      page: 1,
-    });
+    try {
+      // Try to fetch from TMDB first
+      const tmdbData = await fetchFromTMDB("/movie/now_playing", {
+        page: 1,
+      });
 
-    const movies = tmdbData.results.map((movie) => ({
-      id: movie.id,
-      title: movie.title,
-      overview: movie.overview,
-      vote_average: movie.vote_average,
-      release_date: movie.release_date,
-      poster_path: `${IMAGE_BASE_URL}${movie.poster_path}`,
-      backdrop_path: `${IMAGE_BASE_URL}${movie.backdrop_path}`,
-    }));
+      const movies = tmdbData.results.map((movie) => ({
+        id: movie.id,
+        _id: movie.id,
+        title: movie.title,
+        overview: movie.overview,
+        vote_average: movie.vote_average,
+        release_date: movie.release_date,
+        poster_path: `${IMAGE_BASE_URL}${movie.poster_path}`,
+        backdrop_path: `${IMAGE_BASE_URL}${movie.backdrop_path}`,
+        genres: [],
+        runtime: 0,
+      }));
 
-    res.status(200).json({
-      success: true,
-      data: movies,
-    });
+      res.status(200).json({
+        success: true,
+        data: movies,
+      });
+    } catch (tmdbError) {
+      console.warn(
+        "TMDB API failed, falling back to database:",
+        tmdbError.message
+      );
+
+      // Fallback to database movies
+      const dbMovies = await Movie.find().limit(20);
+
+      if (dbMovies.length === 0) {
+        return res.status(200).json({
+          success: true,
+          data: [],
+          message: "No movies available. Please add movies to the database.",
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        data: dbMovies,
+        source: "database",
+      });
+    }
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error fetching movies from TMDB",
+      message: "Error fetching movies",
       error: error.message,
-      details: error.response?.data,
-      tmdbKeyExists: !!TMDB_API_KEY,
     });
   }
 };

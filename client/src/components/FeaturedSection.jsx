@@ -24,7 +24,7 @@ const FeaturedSection = () => {
     };
 
     loadFeaturedMovies();
-  }, [fetchAllMovies]);
+  }, []);
 
   const handleViewAll = () => {
     navigate("/movies");

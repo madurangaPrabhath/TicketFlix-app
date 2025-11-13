@@ -19,9 +19,13 @@ const Movies = () => {
         setIsLoading(true);
         const movies = await fetchAllMovies();
         setAllMovies(movies || []);
+
+        if (!movies || movies.length === 0) {
+          toast("No movies available in database", { icon: "🎬" });
+        }
       } catch (error) {
         console.error("Error loading movies:", error);
-        toast.error("Failed to load movies");
+        toast.error("Failed to load movies. Check console for details.");
         setAllMovies([]);
       } finally {
         setIsLoading(false);
@@ -29,8 +33,7 @@ const Movies = () => {
     };
 
     loadMovies();
-  }, [fetchAllMovies]);
-
+  }, []);
   const genres = useMemo(() => {
     const allGenres = allMovies.flatMap((movie) =>
       (movie.genres || []).map((g) => (typeof g === "object" ? g.name : g))
