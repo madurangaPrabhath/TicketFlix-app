@@ -96,9 +96,23 @@ const MovieDetails = () => {
 
       if (isFavorite) {
         console.log("MovieDetails: Removing from favorites");
-        await removeFromFavorites(userId, movie._id || movie.id);
-        setIsFavorite(false);
-        toast.success("Removed from favorites");
+        const favorite = userFavorites?.find((f) => {
+          const favMovie = f.movieId || f;
+          return (
+            favMovie?.id === id ||
+            favMovie?._id === id ||
+            Number(favMovie?.id) === Number(id) ||
+            String(favMovie?.id) === String(id)
+          );
+        });
+
+        if (favorite?._id) {
+          await removeFromFavorites(userId, favorite._id);
+          setIsFavorite(false);
+          toast.success("Removed from favorites");
+        } else {
+          toast.error("Could not find favorite to remove");
+        }
       } else {
         console.log("MovieDetails: Adding to favorites with movieId:", id);
         await addToFavorites(userId, id);
