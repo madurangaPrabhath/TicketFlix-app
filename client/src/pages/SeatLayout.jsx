@@ -1,8 +1,8 @@
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { dummyShowsData } from "../assets/assets";
 import { useEffect, useState } from "react";
 import { ArrowRight, Clock, Check, Calendar } from "lucide-react";
 import toast from "react-hot-toast";
+import axios from "axios";
 
 const SeatLayout = () => {
   const { id, date } = useParams();
@@ -13,7 +13,12 @@ const SeatLayout = () => {
   const [selectedTime, setSelectedTime] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [show, setShow] = useState(null);
+  const [shows, setShows] = useState([]);
+  const [bookedSeats, setBookedSeats] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [availableTimes, setAvailableTimes] = useState([]);
+
+  const API_BASE_URL = "http://localhost:3000/api";
 
   const groupRows = [
     ["A", "B"],
@@ -23,51 +28,65 @@ const SeatLayout = () => {
     ["I", "J"],
   ];
 
-  const bookedSeats = ["A1", "A2", "B5", "C3", "D7", "E2"];
-
-  const availableTimes = [
-    { time: "09:00 AM", availableSeats: 45 },
-    { time: "12:30 PM", availableSeats: 32 },
-    { time: "03:45 PM", availableSeats: 28 },
-    { time: "06:15 PM", availableSeats: 15 },
-    { time: "09:30 PM", availableSeats: 50 },
-  ];
-
-  const getShow = async () => {
+  const fetchMovieAndShows = async () => {
     try {
-      const movie = dummyShowsData.find((show) => show._id === id);
-      console.log("Found movie:", movie);
+      setLoading(true);
+      const movieRes = await axios.get(`${API_BASE_URL}/movies/${id}`);
+      const showsRes = await axios.get(`${API_BASE_URL}/shows/movie/${id}`);
 
-      if (movie) {
-        setShow({
-          movie: movie,
-        });
-      } else {
-        console.error("Movie not found with id:", id);
+      setShow({
+        movie: movieRes.data.data,
+        shows: showsRes.data.data || [],
+      });
+
+      const times = showsRes.data.data.map((show) => ({
+        ...show,
+        availableSeats: 150 - (show.bookedSeats?.length || 0),
+      }));
+
+      setAvailableTimes(times);
+
+      if (!selectedDate && showsRes.data.data.length > 0) {
+        const firstShowDate = new Date(showsRes.data.data[0].date)
+          .toISOString()
+          .split("T")[0];
+        setSelectedDate(firstShowDate);
       }
+
+      setLoading(false);
     } catch (error) {
-      console.error("Error fetching show:", error);
-    } finally {
+      console.error("Error fetching movie and shows:", error);
       setLoading(false);
     }
   };
 
+  const fetchBookedSeats = async (showId) => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/shows/${showId}`);
+      const seats = res.data.data?.bookedSeats || [];
+      setBookedSeats(seats);
+    } catch (error) {
+      console.error("Error fetching booked seats:", error);
+      setBookedSeats([]);
+    }
+  };
+
   useEffect(() => {
-    getShow();
-    window.scrollTo(0, 0);
+    fetchMovieAndShows();
   }, [id]);
+
+  const handleTimeSelect = (showTime) => {
+    setSelectedTime(showTime.time);
+    fetchBookedSeats(showTime._id);
+  };
 
   useEffect(() => {
     if (date) {
       setSelectedDate(date);
-      console.log("Received date from URL:", date);
     } else if (location.state?.selectedDate) {
       setSelectedDate(location.state.selectedDate);
-      console.log(
-        "Received date from previous page:",
-        location.state.selectedDate
-      );
     }
+    window.scrollTo(0, 0);
   }, [date, location.state]);
 
   const formatDate = (dateString) => {
@@ -196,13 +215,8 @@ const SeatLayout = () => {
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3">
                 {availableTimes.map((item) => (
                   <button
-                    key={item.time}
-                    onClick={() => {
-                      setSelectedTime(item.time);
-                      if (item.showId) {
-                        fetchBookedSeats(item.showId);
-                      }
-                    }}
+                    key={item._id}
+                    onClick={() => handleTimeSelect(item)}
                     className={`
                       p-2 sm:p-3 rounded-lg border-2 transition-all duration-200 text-center
                       ${
@@ -392,7 +406,7 @@ const SeatLayout = () => {
               </div>
 
               <button
-                onClick={async () => {
+                onClick={() => {
                   if (!selectedDate) {
                     toast.error("Please go back and select a date first");
                     return;
@@ -410,7 +424,7 @@ const SeatLayout = () => {
                     (item) => item.time === selectedTime
                   );
 
-                  if (!selectedShow?.showId) {
+                  if (!selectedShow?._id) {
                     toast.error("Show information not found");
                     return;
                   }
@@ -422,7 +436,7 @@ const SeatLayout = () => {
                       time: selectedTime,
                       seats: selectedSeats,
                       totalPrice: grandTotal,
-                      showId: selectedShow.showId,
+                      showId: selectedShow._id,
                     },
                   });
                 }}
