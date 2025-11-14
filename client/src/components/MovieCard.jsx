@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@clerk/clerk-react";
 import { Star, Calendar, Clock, Heart } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 import toast from "react-hot-toast";
 
 const MovieCard = ({ movie }) => {
   const navigate = useNavigate();
-  const { addToFavorites, removeFromFavorites, favorites } = useAppContext();
+  const { userId } = useAuth();
+  const { addToFavorites, removeFromFavorites, userFavorites } =
+    useAppContext();
   const [isFavorited, setIsFavorited] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -16,14 +19,23 @@ const MovieCard = ({ movie }) => {
     return `${hours}h ${mins}m`;
   };
 
+  // Check if movie is favorited - handle both movieId number and object
   useEffect(() => {
-    if (favorites && Array.isArray(favorites)) {
-      const isFav = favorites.some(
-        (fav) => fav._id === movie._id || fav.id === movie.id
-      );
-      setIsFavorited(isFav);
+    if (userFavorites && Array.isArray(userFavorites)) {
+      const movieId = movie._id || movie.id;
+      const isFav = userFavorites.some((f) => {
+        const favMovie = f.movieId || f;
+        // Compare both as numbers for TMDB IDs and as strings for ObjectIds
+        return (
+          favMovie?.id === movieId ||
+          favMovie?._id === movieId ||
+          Number(favMovie?.id) === Number(movieId) ||
+          String(favMovie?.id) === String(movieId)
+        );
+      });
+      setIsFavorited(!!isFav);
     }
-  }, [favorites, movie._id, movie.id]);
+  }, [userFavorites, movie._id, movie.id]);
 
   const genreString =
     movie.genres
@@ -50,14 +62,35 @@ const MovieCard = ({ movie }) => {
 
   const handleToggleFavorite = async (e) => {
     e.stopPropagation();
+
+    if (!userId) {
+      toast.error("Please sign in to add favorites");
+      return;
+    }
+
     try {
       setIsLoading(true);
+      const movieId = movie._id || movie.id;
+
       if (isFavorited) {
-        await removeFromFavorites(movie._id || movie.id);
-        setIsFavorited(false);
-        toast.success("Removed from favorites");
+        // Find the favorite by movieId to get its _id
+        const favorite = userFavorites?.find((f) => {
+          const favMovie = f.movieId || f;
+          return (
+            favMovie?.id === movieId ||
+            favMovie?._id === movieId ||
+            Number(favMovie?.id) === Number(movieId) ||
+            String(favMovie?.id) === String(movieId)
+          );
+        });
+
+        if (favorite?._id) {
+          await removeFromFavorites(userId, favorite._id);
+          setIsFavorited(false);
+          toast.success("Removed from favorites");
+        }
       } else {
-        await addToFavorites(movie._id || movie.id);
+        await addToFavorites(userId, movieId);
         setIsFavorited(true);
         toast.success("Added to favorites");
       }
