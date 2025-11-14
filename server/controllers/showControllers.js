@@ -6,26 +6,34 @@ export const getShowsByMovieId = async (req, res) => {
   try {
     const { movieId } = req.params;
 
-    const shows = await Show.find({ movieId })
-      .populate("movieId", "title poster_path backdrop_path")
-      .sort({ showDate: 1, showTime: 1 });
+    console.log("Server: getShowsByMovieId called -", { movieId });
 
-    if (!shows || shows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No shows found for this movie",
-      });
+    // Try to find by ObjectId first (if it's a valid MongoDB ID)
+    let shows = [];
+    try {
+      shows = await Show.find({ movieId })
+        .populate("movieId", "title poster_path backdrop_path")
+        .sort({ showDate: 1, showTime: 1 });
+    } catch (err) {
+      console.log(
+        "Server: movieId is not a valid ObjectId (likely TMDB ID), returning empty shows"
+      );
+      shows = [];
     }
 
+    // Return empty array if no shows found (don't error out)
     res.status(200).json({
       success: true,
       data: shows,
+      message:
+        shows.length > 0 ? "Shows found" : "No shows available for this movie",
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching shows",
-      error: error.message,
+    console.error("Server: Error fetching shows:", error);
+    res.status(200).json({
+      success: true,
+      data: [],
+      message: "No shows available for this movie",
     });
   }
 };

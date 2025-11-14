@@ -77,7 +77,7 @@ const MovieDetails = () => {
     };
 
     load();
-  }, [id, userFavorites, getMovieById, getShowsByMovieId]);
+  }, [id, userFavorites]);
 
   const handleFavorite = async () => {
     try {

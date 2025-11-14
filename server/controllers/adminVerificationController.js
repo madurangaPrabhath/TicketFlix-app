@@ -3,7 +3,8 @@ import AdminSettings from "../models/AdminSettings.js";
 
 export const verifyAdminStatus = async (req, res) => {
   try {
-    const userId = req.auth?.userId;
+    const auth = await req.auth();
+    const userId = auth?.userId;
 
     if (!userId) {
       return res.status(401).json({
@@ -64,7 +65,8 @@ export const getAdminStatus = async (req, res) => {
 
 export const requireAdmin = async (req, res, next) => {
   try {
-    const userId = req.auth?.userId;
+    const auth = await req.auth();
+    const userId = auth?.userId;
 
     if (!userId) {
       return res.status(401).json({
@@ -102,7 +104,8 @@ export const requireAdmin = async (req, res, next) => {
 
 export const getAdminProfile = async (req, res) => {
   try {
-    const userId = req.auth?.userId;
+    const auth = await req.auth();
+    const userId = auth?.userId;
 
     if (!userId) {
       return res.status(401).json({
@@ -148,7 +151,8 @@ export const getAdminProfile = async (req, res) => {
 
 export const updateAdminProfile = async (req, res) => {
   try {
-    const userId = req.auth?.userId;
+    const auth = await req.auth();
+    const userId = auth?.userId;
     const { firstName, lastName, profileImageUrl } = req.body;
 
     if (!userId) {
@@ -195,7 +199,8 @@ export const updateAdminProfile = async (req, res) => {
 
 export const getAdminPermissions = async (req, res) => {
   try {
-    const userId = req.auth?.userId;
+    const auth = await req.auth();
+    const userId = auth?.userId;
 
     if (!userId) {
       return res.status(401).json({
@@ -264,7 +269,8 @@ export const getAdminPermissions = async (req, res) => {
 
 export const validateAdminToken = async (req, res) => {
   try {
-    const userId = req.auth?.userId;
+    const auth = await req.auth();
+    const userId = auth?.userId;
 
     if (!userId) {
       return res.status(401).json({

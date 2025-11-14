@@ -265,7 +265,11 @@ export const addToFavorites = async (req, res) => {
     const { userId } = req.params;
     const { movieId } = req.body;
 
-    console.log("Server: addToFavorites called -", { userId, movieId });
+    console.log("Server: addToFavorites called -", {
+      userId,
+      movieId,
+      movieIdType: typeof movieId,
+    });
 
     if (!userId || !movieId) {
       return res.status(400).json({
@@ -291,10 +295,16 @@ export const addToFavorites = async (req, res) => {
     });
 
     await favorite.save();
-    
-    // Populate movieId before sending response
-    await favorite.populate("movieId");
-    
+
+    try {
+      await favorite.populate("movieId");
+    } catch (err) {
+      console.log(
+        "Server: Could not populate movieId (likely TMDB ID string):",
+        movieId
+      );
+    }
+
     console.log("Server: Favorite saved successfully:", favorite);
 
     res.status(201).json({
