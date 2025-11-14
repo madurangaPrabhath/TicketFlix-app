@@ -54,6 +54,17 @@ const Favorite = () => {
     }
   }, [userFavorites]);
 
+  // Fetch full movie data for each favorite that only has movieId
+  const enrichedFavorites = favoritesList.map((fav) => {
+    const movie = fav.movieId || fav;
+    // If movie is just a number (TMDB ID), we'll need to fetch it
+    // For now, return as-is and let MovieCard handle it
+    return {
+      ...fav,
+      movieId: movie,
+    };
+  });
+
   const filteredFavorites = favoritesList
     .filter((fav) => {
       const movie = fav.movieId || fav;

@@ -36,13 +36,15 @@ const MovieCard = ({ movie }) => {
     : "N/A";
 
   const handleMovieClick = () => {
-    navigate(`/movies/${movie._id}`);
+    const movieId = movie._id || movie.id;
+    navigate(`/movies/${movieId}`);
     window.scrollTo(0, 0);
   };
 
   const handleBuyTickets = (e) => {
     e.stopPropagation();
-    navigate(`/movies/${movie._id}`);
+    const movieId = movie._id || movie.id;
+    navigate(`/movies/${movieId}`);
     window.scrollTo(0, 0);
   };
 

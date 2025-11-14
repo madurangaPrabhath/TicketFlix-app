@@ -54,7 +54,9 @@ const MovieDetails = () => {
     const load = async () => {
       try {
         setIsLoading(true);
+        console.log("MovieDetails: Loading movie with id:", id);
         const m = await getMovieById(id);
+        console.log("MovieDetails: Loaded movie:", m);
         const shows = await getShowsByMovieId(id);
         setMovie(m || null);
         const dt = buildDateTimeMap(shows || []);
@@ -98,8 +100,8 @@ const MovieDetails = () => {
         setIsFavorite(false);
         toast.success("Removed from favorites");
       } else {
-        console.log("MovieDetails: Adding to favorites");
-        await addToFavorites(userId, movie._id || movie.id);
+        console.log("MovieDetails: Adding to favorites with movieId:", id);
+        await addToFavorites(userId, id);
         setIsFavorite(true);
         toast.success("Added to favorites");
       }

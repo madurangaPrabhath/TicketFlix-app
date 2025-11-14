@@ -9,7 +9,6 @@ const favoriteSchema = new mongoose.Schema(
     },
     movieId: {
       type: mongoose.Schema.Types.Mixed,
-      ref: "Movie",
       required: true,
     },
     addedAt: {
@@ -22,7 +21,8 @@ const favoriteSchema = new mongoose.Schema(
   }
 );
 
-favoriteSchema.index({ userId: 1, movieId: 1 }, { unique: true });
+// Create compound unique index - sparse allows multiple null values
+favoriteSchema.index({ userId: 1, movieId: 1 }, { unique: true, sparse: true });
 
 const Favorite = mongoose.model("Favorite", favoriteSchema);
 

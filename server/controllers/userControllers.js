@@ -1,6 +1,33 @@
 import User from "../models/User.js";
 import Booking from "../models/Booking.js";
 import Favorite from "../models/Favorite.js";
+import axios from "axios";
+
+const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+const TMDB_API_KEY = process.env.TMDB_API_KEY;
+const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
+
+const fetchFromTMDB = async (endpoint, params = {}) => {
+  try {
+    const response = await axios.get(`${TMDB_BASE_URL}${endpoint}`, {
+      params: {
+        api_key: TMDB_API_KEY,
+        ...params,
+      },
+      headers: {
+        Accept: "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error(
+      "TMDB API Error:",
+      error.response?.status,
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
 
 export const getUserProfile = async (req, res) => {
   try {
@@ -230,19 +257,56 @@ export const getUserFavorites = async (req, res) => {
 
     const skip = (page - 1) * limit;
 
+    // Count all favorites first
+    const total = await Favorite.countDocuments({ userId });
+    console.log("Server: Total favorites for user:", total);
+
+    // Fetch favorites WITHOUT populate since movieId can be Mixed type (TMDB ID or ObjectId)
     const favorites = await Favorite.find({ userId })
-      .populate("movieId")
       .skip(skip)
       .limit(parseInt(limit))
-      .sort({ addedAt: -1 });
+      .sort({ addedAt: -1 })
+      .lean();
 
-    console.log("Server: Found favorites:", favorites);
+    console.log("Server: Found favorites count:", favorites.length);
 
-    const total = await Favorite.countDocuments({ userId });
+    // Enrich favorites with full movie data from TMDB
+    const enrichedFavorites = await Promise.all(
+      favorites.map(async (fav) => {
+        try {
+          // If movieId is a number (TMDB ID), fetch from TMDB
+          if (typeof fav.movieId === "number" || /^\d+$/.test(fav.movieId)) {
+            const tmdbMovie = await fetchFromTMDB(`/movie/${fav.movieId}`);
+            return {
+              ...fav,
+              movieId: {
+                id: tmdbMovie.id,
+                title: tmdbMovie.title,
+                overview: tmdbMovie.overview,
+                genres: tmdbMovie.genres?.map((g) => g.name) || [],
+                vote_average: tmdbMovie.vote_average,
+                release_date: tmdbMovie.release_date,
+                poster_path: `${IMAGE_BASE_URL}${tmdbMovie.poster_path}`,
+                backdrop_path: `${IMAGE_BASE_URL}${tmdbMovie.backdrop_path}`,
+                runtime: tmdbMovie.runtime,
+              },
+            };
+          }
+          return fav;
+        } catch (err) {
+          console.log(
+            "Could not fetch TMDB data for movieId:",
+            fav.movieId,
+            err.message
+          );
+          return fav;
+        }
+      })
+    );
 
     res.status(200).json({
       success: true,
-      data: favorites,
+      data: enrichedFavorites,
       pagination: {
         total,
         page: parseInt(page),
@@ -278,7 +342,8 @@ export const addToFavorites = async (req, res) => {
       });
     }
 
-    const existing = await Favorite.findOne({ userId, movieId });
+    // Check for existing favorite - use strict equality for all types
+    const existing = await Favorite.findOne({ userId, movieId }).exec();
 
     if (existing) {
       console.log("Server: Movie already in favorites");
@@ -294,23 +359,24 @@ export const addToFavorites = async (req, res) => {
       addedAt: new Date(),
     });
 
-    await favorite.save();
+    const savedFavorite = await favorite.save();
+    console.log("Server: Favorite saved successfully:", savedFavorite);
 
     try {
-      await favorite.populate("movieId");
+      await savedFavorite.populate("movieId");
+      console.log("Server: Favorite populated:", savedFavorite);
     } catch (err) {
       console.log(
         "Server: Could not populate movieId (likely TMDB ID string):",
-        movieId
+        movieId,
+        err.message
       );
     }
-
-    console.log("Server: Favorite saved successfully:", favorite);
 
     res.status(201).json({
       success: true,
       message: "Added to favorites",
-      data: favorite,
+      data: savedFavorite,
     });
   } catch (error) {
     console.error("Server: Error adding to favorites:", error);
