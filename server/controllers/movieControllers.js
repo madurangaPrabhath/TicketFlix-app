@@ -30,7 +30,6 @@ const fetchFromTMDB = async (endpoint, params = {}) => {
 export const getAllMovies = async (req, res) => {
   try {
     try {
-      // Try to fetch from TMDB first
       const tmdbData = await fetchFromTMDB("/movie/now_playing", {
         page: 1,
       });
@@ -58,7 +57,6 @@ export const getAllMovies = async (req, res) => {
         tmdbError.message
       );
 
-      // Fallback to database movies
       const dbMovies = await Movie.find().limit(20);
 
       if (dbMovies.length === 0) {
@@ -92,6 +90,22 @@ export const getMovieById = async (req, res) => {
 
     if (isNumeric) {
       const movieData = await fetchFromTMDB(`/movie/${movieId}`);
+
+      let casts = [];
+      try {
+        const creditsData = await fetchFromTMDB(`/movie/${movieId}/credits`);
+        casts = (creditsData.cast || []).slice(0, 12).map((actor) => ({
+          id: actor.id,
+          name: actor.name,
+          character: actor.character,
+          profile_path: actor.profile_path
+            ? `${IMAGE_BASE_URL}${actor.profile_path}`
+            : null,
+        }));
+      } catch (err) {
+        console.log("Could not fetch cast data for movie:", movieId);
+      }
+
       return res.status(200).json({
         success: true,
         data: {
@@ -104,6 +118,9 @@ export const getMovieById = async (req, res) => {
           poster_path: `${IMAGE_BASE_URL}${movieData.poster_path}`,
           backdrop_path: `${IMAGE_BASE_URL}${movieData.backdrop_path}`,
           runtime: movieData.runtime,
+          tagline: movieData.tagline || "",
+          original_language: movieData.original_language || "en",
+          casts: casts,
         },
       });
     } else {

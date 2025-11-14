@@ -281,27 +281,38 @@ const MovieDetails = () => {
       </div>
 
       {movie.casts && movie.casts.length > 0 && (
-        <div className="px-4 sm:px-6 md:px-12 lg:px-36 py-8 sm:py-12 md:py-16 bg-black">
+        <div className="px-4 sm:px-6 md:px-12 lg:px-36 py-8 sm:py-12 md:py-16 bg-black border-t border-neutral-800">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-6 sm:mb-8">
             Cast
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
-            {movie.casts.slice(0, 12).map((cast, index) => (
-              <div key={index} className="group">
-                <div className="relative overflow-hidden rounded-lg sm:rounded-xl aspect-square mb-2 sm:mb-3">
-                  <img
-                    src={cast.profile_path}
-                    alt={cast.name}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            {movie.casts.map((cast) => (
+              <div key={cast.id} className="group cursor-pointer">
+                <div className="relative overflow-hidden rounded-lg sm:rounded-xl aspect-square mb-2 sm:mb-3 bg-neutral-800 border border-neutral-700 hover:border-red-600/50 transition-colors">
+                  {cast.profile_path ? (
+                    <img
+                      src={cast.profile_path}
+                      alt={cast.name}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-neutral-700 to-neutral-800">
+                      <div className="text-center">
+                        <span className="text-2xl sm:text-3xl text-neutral-500">
+                          👤
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </div>
-                <p className="text-white text-xs sm:text-sm font-medium text-center line-clamp-2">
+                <p className="text-white text-xs sm:text-sm font-semibold text-center line-clamp-2 group-hover:text-red-600 transition-colors">
                   {cast.name}
                 </p>
                 {cast.character && (
-                  <p className="text-gray-400 text-xs text-center line-clamp-1 mt-0.5">
-                    {cast.character}
+                  <p className="text-gray-400 text-xs text-center line-clamp-1 mt-0.5 hover:text-gray-300 transition-colors">
+                    as {cast.character}
                   </p>
                 )}
               </div>
