@@ -33,15 +33,18 @@ const DateSelect = ({ dateTime, id }) => {
       if (response.data.success && response.data.data) {
         const shows = response.data.data;
 
+        // Extract unique dates from shows - handle both 'date' and 'showDate' fields
         const dateSet = new Set();
         (shows || []).forEach((show) => {
-          if (show.showDate) {
-            const dateStr = new Date(show.showDate).toISOString().split("T")[0];
+          const showDateField = show.date || show.showDate;
+          if (showDateField) {
+            const dateStr = new Date(showDateField).toISOString().split("T")[0];
             dateSet.add(dateStr);
           }
         });
 
         const uniqueDates = Array.from(dateSet).sort();
+        console.log("Extracted unique dates:", uniqueDates);
         setDates(uniqueDates);
 
         if (uniqueDates.length === 0) {
@@ -95,8 +98,9 @@ const DateSelect = ({ dateTime, id }) => {
     const dateObj = new Date(selectedDate);
     const formattedDate = dateObj.toISOString().split("T")[0];
 
-    navigate(`/movie/${id}/${formattedDate}`, {
-      state: { selectedDate: selectedDate },
+    // Navigate to SeatLayout with movie ID and selected date
+    navigate(`/seat-layout/${id}/${formattedDate}`, {
+      state: { selectedDate: formattedDate },
     });
     window.scrollTo(0, 0);
   };

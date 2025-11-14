@@ -39,15 +39,19 @@ const SeatLayout = () => {
         shows: showsRes.data.data || [],
       });
 
+      // Map shows with available seats info
       const times = showsRes.data.data.map((show) => ({
         ...show,
         availableSeats: 150 - (show.bookedSeats?.length || 0),
+        showDate: show.date || show.showDate,
       }));
 
       setAvailableTimes(times);
 
       if (!selectedDate && showsRes.data.data.length > 0) {
-        const firstShowDate = new Date(showsRes.data.data[0].date)
+        const firstShowDate = new Date(
+          showsRes.data.data[0].date || showsRes.data.data[0].showDate
+        )
           .toISOString()
           .split("T")[0];
         setSelectedDate(firstShowDate);
@@ -76,7 +80,7 @@ const SeatLayout = () => {
   }, [id]);
 
   const handleTimeSelect = (showTime) => {
-    setSelectedTime(showTime.time);
+    setSelectedTime(showTime.showTime || showTime.time);
     fetchBookedSeats(showTime._id);
   };
 
@@ -213,27 +217,35 @@ const SeatLayout = () => {
               </h2>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3">
-                {availableTimes.map((item) => (
-                  <button
-                    key={item._id}
-                    onClick={() => handleTimeSelect(item)}
-                    className={`
-                      p-2 sm:p-3 rounded-lg border-2 transition-all duration-200 text-center
-                      ${
-                        selectedTime === item.time
-                          ? "bg-green-600 border-green-500 text-white shadow-lg shadow-green-600/50 scale-105"
-                          : "bg-neutral-800 border-neutral-700 text-gray-300 hover:border-green-500 hover:bg-neutral-700 active:scale-95"
-                      }
-                    `}
-                  >
-                    <p className="text-xs sm:text-sm font-semibold">
-                      {item.time}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-0.5 sm:mt-1">
-                      {item.availableSeats} seats
-                    </p>
-                  </button>
-                ))}
+                {availableTimes
+                  .filter((item) => {
+                    if (!selectedDate) return true;
+                    const itemDate = new Date(item.showDate || item.date)
+                      .toISOString()
+                      .split("T")[0];
+                    return itemDate === selectedDate;
+                  })
+                  .map((item) => (
+                    <button
+                      key={item._id}
+                      onClick={() => handleTimeSelect(item)}
+                      className={`
+                        p-2 sm:p-3 rounded-lg border-2 transition-all duration-200 text-center
+                        ${
+                          selectedTime === item.showTime
+                            ? "bg-green-600 border-green-500 text-white shadow-lg shadow-green-600/50 scale-105"
+                            : "bg-neutral-800 border-neutral-700 text-gray-300 hover:border-green-500 hover:bg-neutral-700 active:scale-95"
+                        }
+                      `}
+                    >
+                      <p className="text-xs sm:text-sm font-semibold">
+                        {item.showTime || item.time}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5 sm:mt-1">
+                        {item.availableSeats} seats
+                      </p>
+                    </button>
+                  ))}
               </div>
             </div>
 
@@ -421,7 +433,7 @@ const SeatLayout = () => {
                   }
 
                   const selectedShow = availableTimes.find(
-                    (item) => item.time === selectedTime
+                    (item) => (item.showTime || item.time) === selectedTime
                   );
 
                   if (!selectedShow?._id) {
