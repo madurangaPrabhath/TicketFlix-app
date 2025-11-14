@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@clerk/clerk-react";
 import {
   Calendar,
   Clock,
@@ -14,75 +15,62 @@ import {
   CreditCard,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { dummyShowsData, dummyBookingData } from "../assets/assets";
+import axios from "axios";
 
 const Bookings = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
 
-  const mockBookings = [
-    {
-      id: "BK001",
-      movieTitle: dummyShowsData[0].title,
-      moviePoster: dummyShowsData[0].poster_path,
-      theater: "PVR Cinema - Downtown",
-      date: "2025-11-15",
-      time: "07:00 PM",
-      seats: ["A1", "A2", "B1", "B2"],
-      totalPrice: "$48.00",
-      status: "confirmed",
-      bookingDate: "2025-11-06",
-      ticketFormat: "E-Ticket",
-    },
-    {
-      id: "BK002",
-      movieTitle: dummyShowsData[1].title,
-      moviePoster: dummyShowsData[1].poster_path,
-      theater: "INOX Multiplex - Mall Road",
-      date: "2025-11-20",
-      time: "09:30 PM",
-      seats: ["C5", "C6"],
-      totalPrice: "$24.00",
-      status: "confirmed",
-      bookingDate: "2025-11-05",
-      ticketFormat: "E-Ticket",
-    },
-    {
-      id: "BK003",
-      movieTitle: dummyShowsData[2].title,
-      moviePoster: dummyShowsData[2].poster_path,
-      theater: "Cinemark - City Center",
-      date: "2025-10-25",
-      time: "04:00 PM",
-      seats: ["D3", "D4"],
-      totalPrice: "$24.00",
-      status: "completed",
-      bookingDate: "2025-10-18",
-      ticketFormat: "E-Ticket",
-    },
-    {
-      id: "BK004",
-      movieTitle: dummyShowsData[3].title,
-      moviePoster: dummyShowsData[3].poster_path,
-      theater: "Showcase Cinema",
-      date: "2025-11-10",
-      time: "06:00 PM",
-      seats: ["E2"],
-      totalPrice: "$12.00",
-      status: "cancelled",
-      bookingDate: "2025-11-01",
-      ticketFormat: "E-Ticket",
-    },
-  ];
+  const API_BASE_URL = "http://localhost:3000/api";
+
+  const fetchBookings = async (userId) => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`${API_BASE_URL}/bookings/user/${userId}`, {
+        timeout: 10000,
+      });
+
+      const bookingsData = res.data.data || [];
+
+      const formattedBookings = bookingsData.map((booking) => ({
+        id: booking._id,
+        movieTitle: booking.movie?.title || "Unknown Movie",
+        moviePoster: booking.movie?.poster_path || "/default-poster.jpg",
+        theater: booking.theater || "Theater Name Not Available",
+        date: booking.date,
+        time: booking.time,
+        seats: booking.seats || [],
+        totalPrice: `$${booking.totalPrice?.toFixed(2) || "0.00"}`,
+        status: booking.status || "pending",
+        bookingDate: booking.createdAt,
+        ticketFormat: "E-Ticket",
+      }));
+
+      setBookings(formattedBookings);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+      setBookings([]);
+      setLoading(false);
+      if (error.response?.status !== 404) {
+        toast.error("Failed to load bookings");
+      }
+    }
+  };
 
   useEffect(() => {
-    setTimeout(() => {
-      setBookings(mockBookings);
+    if (user?.id) {
+      fetchBookings(user.id);
+      setHasAttemptedLoad(true);
+    } else if (!user && !hasAttemptedLoad) {
       setLoading(false);
-    }, 500);
-  }, []);
+      setHasAttemptedLoad(true);
+    }
+  }, [user]);
 
   const getFilteredBookings = () => {
     if (filter === "all") return bookings;
@@ -121,21 +109,42 @@ const Bookings = () => {
     window.print();
   };
 
-  const handleCancelBooking = (bookingId) => {
-    toast.success("Booking cancelled successfully!");
-    setBookings(
-      bookings.map((b) => (b.id === bookingId ? { ...b, status: "cancelled" } : b))
-    );
+  const handleCancelBooking = async (bookingId) => {
+    try {
+      await axios.put(`${API_BASE_URL}/bookings/${bookingId}`, {
+        status: "cancelled",
+      });
+      toast.success("Booking cancelled successfully!");
+      setBookings(
+        bookings.map((b) =>
+          b.id === bookingId ? { ...b, status: "cancelled" } : b
+        )
+      );
+    } catch (error) {
+      console.error("Error cancelling booking:", error);
+      toast.error("Failed to cancel booking");
+    }
   };
 
-  const handlePayment = (bookingId, totalPrice) => {
-    toast.success(`Processing payment of ${totalPrice}...`);
-    setTimeout(() => {
-      setBookings(
-        bookings.map((b) => (b.id === bookingId ? { ...b, status: "confirmed" } : b))
-      );
-      toast.success("Payment successful! Booking confirmed.");
-    }, 1500);
+  const handlePayment = async (bookingId, totalPrice) => {
+    try {
+      toast.success(`Processing payment of ${totalPrice}...`);
+      const res = await axios.put(`${API_BASE_URL}/bookings/${bookingId}`, {
+        status: "confirmed",
+        paymentStatus: "paid",
+      });
+      if (res.data.success) {
+        setBookings(
+          bookings.map((b) =>
+            b.id === bookingId ? { ...b, status: "confirmed" } : b
+          )
+        );
+        toast.success("Payment successful! Booking confirmed.");
+      }
+    } catch (error) {
+      console.error("Error processing payment:", error);
+      toast.error("Payment failed. Please try again.");
+    }
   };
 
   const getStatusBadgeColor = (status) => {
@@ -175,6 +184,24 @@ const Bookings = () => {
     );
   }
 
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-black pt-20 pb-16 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-white text-lg mb-4">
+            Please sign in to view your bookings
+          </p>
+          <button
+            onClick={() => navigate("/")}
+            className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
+          >
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black pt-14 sm:pt-16 md:pt-18 pb-12">
       <div className="px-3 sm:px-4 md:px-8 lg:px-16 max-w-7xl mx-auto">
@@ -198,9 +225,20 @@ const Bookings = () => {
                   : "bg-neutral-800 text-gray-400 hover:bg-neutral-700"
               }`}
             >
-              {tab === "upcoming" ? "Upcoming" : tab === "completed" ? "Completed" : tab === "cancelled" ? "Cancelled" : "All"}
+              {tab === "upcoming"
+                ? "Upcoming"
+                : tab === "completed"
+                ? "Completed"
+                : tab === "cancelled"
+                ? "Cancelled"
+                : "All"}
               <span className="ml-1.5 text-xs">
-                ({bookings.filter((b) => tab === "all" || b.status === tab).length})
+                (
+                {
+                  bookings.filter((b) => tab === "all" || b.status === tab)
+                    .length
+                }
+                )
               </span>
             </button>
           ))}
@@ -249,7 +287,9 @@ const Bookings = () => {
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="text-gray-400 text-xs sm:text-sm">Total Price</p>
+                            <p className="text-gray-400 text-xs sm:text-sm">
+                              Total Price
+                            </p>
                             <p className="text-green-400 font-bold text-xl sm:text-2xl">
                               {booking.totalPrice}
                             </p>
@@ -264,12 +304,16 @@ const Bookings = () => {
                           </p>
                           <div className="flex items-center gap-2 text-white text-xs sm:text-sm">
                             <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500 flex-shrink-0" />
-                            <span className="line-clamp-2">{booking.theater}</span>
+                            <span className="line-clamp-2">
+                              {booking.theater}
+                            </span>
                           </div>
                         </div>
 
                         <div className="space-y-1">
-                          <p className="text-gray-500 text-xs uppercase tracking-wider">Date</p>
+                          <p className="text-gray-500 text-xs uppercase tracking-wider">
+                            Date
+                          </p>
                           <div className="flex items-center gap-2 text-white text-xs sm:text-sm">
                             <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400 flex-shrink-0" />
                             <span>{formatDate(booking.date)}</span>
@@ -277,7 +321,9 @@ const Bookings = () => {
                         </div>
 
                         <div className="space-y-1">
-                          <p className="text-gray-500 text-xs uppercase tracking-wider">Time</p>
+                          <p className="text-gray-500 text-xs uppercase tracking-wider">
+                            Time
+                          </p>
                           <div className="flex items-center gap-2 text-white text-xs sm:text-sm">
                             <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-400 flex-shrink-0" />
                             <span>{booking.time}</span>
@@ -326,10 +372,16 @@ const Bookings = () => {
                       </button>
 
                       <button
-                        onClick={() => handlePayment(booking.id, booking.totalPrice)}
-                        disabled={booking.status === "cancelled" || booking.status === "confirmed"}
+                        onClick={() =>
+                          handlePayment(booking.id, booking.totalPrice)
+                        }
+                        disabled={
+                          booking.status === "cancelled" ||
+                          booking.status === "confirmed"
+                        }
                         className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm ${
-                          booking.status === "cancelled" || booking.status === "confirmed"
+                          booking.status === "cancelled" ||
+                          booking.status === "confirmed"
                             ? "bg-neutral-700 text-gray-500 cursor-not-allowed opacity-50"
                             : "bg-orange-600 hover:bg-orange-700 text-white active:scale-95"
                         }`}
