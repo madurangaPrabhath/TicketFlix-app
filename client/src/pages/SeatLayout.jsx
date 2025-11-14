@@ -197,7 +197,12 @@ const SeatLayout = () => {
                 {availableTimes.map((item) => (
                   <button
                     key={item.time}
-                    onClick={() => setSelectedTime(item.time)}
+                    onClick={() => {
+                      setSelectedTime(item.time);
+                      if (item.showId) {
+                        fetchBookedSeats(item.showId);
+                      }
+                    }}
                     className={`
                       p-2 sm:p-3 rounded-lg border-2 transition-all duration-200 text-center
                       ${
@@ -211,7 +216,7 @@ const SeatLayout = () => {
                       {item.time}
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5 sm:mt-1">
-                      {item.availableSeats}
+                      {item.availableSeats} seats
                     </p>
                   </button>
                 ))}
@@ -387,7 +392,7 @@ const SeatLayout = () => {
               </div>
 
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (!selectedDate) {
                     toast.error("Please go back and select a date first");
                     return;
@@ -400,6 +405,16 @@ const SeatLayout = () => {
                     toast.error("Please select at least one seat");
                     return;
                   }
+
+                  const selectedShow = availableTimes.find(
+                    (item) => item.time === selectedTime
+                  );
+
+                  if (!selectedShow?.showId) {
+                    toast.error("Show information not found");
+                    return;
+                  }
+
                   navigate(`/booking`, {
                     state: {
                       movie: show.movie,
@@ -407,6 +422,7 @@ const SeatLayout = () => {
                       time: selectedTime,
                       seats: selectedSeats,
                       totalPrice: grandTotal,
+                      showId: selectedShow.showId,
                     },
                   });
                 }}

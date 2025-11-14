@@ -1,15 +1,64 @@
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import axios from "axios";
 
 const DateSelect = ({ dateTime, id }) => {
   const navigate = useNavigate();
   const scrollContainerRef = useRef(null);
 
   const [selectedDate, setSelectedDate] = useState(null);
+  const [dates, setDates] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const dates = Object.keys(dateTime);
+  const API_BASE_URL = "http://localhost:3000/api";
+
+  useEffect(() => {
+    if (!dateTime || Object.keys(dateTime).length === 0) {
+      fetchShowsAndBuildDates();
+    } else {
+      setDates(Object.keys(dateTime));
+    }
+  }, [dateTime, id]);
+
+  const fetchShowsAndBuildDates = async () => {
+    try {
+      setLoading(true);
+      console.log("Fetching shows for movie:", id);
+
+      const response = await axios.get(`${API_BASE_URL}/shows/movie/${id}`);
+      console.log("Shows response:", response.data);
+
+      if (response.data.success && response.data.data) {
+        const shows = response.data.data;
+
+        const dateSet = new Set();
+        (shows || []).forEach((show) => {
+          if (show.showDate) {
+            const dateStr = new Date(show.showDate).toISOString().split("T")[0];
+            dateSet.add(dateStr);
+          }
+        });
+
+        const uniqueDates = Array.from(dateSet).sort();
+        setDates(uniqueDates);
+
+        if (uniqueDates.length === 0) {
+          console.warn("No shows found for this movie");
+          toast.error("No shows available for this movie");
+        }
+      } else {
+        console.warn("No shows data received");
+        toast.error("Failed to load available dates");
+      }
+    } catch (error) {
+      console.error("Error fetching shows:", error);
+      toast.error("Failed to load available dates");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const scroll = (direction) => {
     if (scrollContainerRef.current) {
@@ -57,7 +106,14 @@ const DateSelect = ({ dateTime, id }) => {
       <div className="px-6 md:px-12 lg:px-36 py-16 bg-neutral-950">
         <div className="text-center text-gray-400 py-12">
           <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-600" />
-          <p className="text-lg">No available dates</p>
+          <p className="text-lg">
+            {loading ? "Loading available dates..." : "No available dates"}
+          </p>
+          {!loading && (
+            <p className="text-sm text-gray-500 mt-2">
+              This movie has no scheduled shows
+            </p>
+          )}
         </div>
       </div>
     );
