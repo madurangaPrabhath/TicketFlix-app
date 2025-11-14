@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "@clerk/clerk-react";
 import MovieCard from "../components/MovieCard";
 import DateSelect from "../components/DateSelect";
 import { Play, Heart, Star, Calendar, Clock, Share2 } from "lucide-react";
@@ -9,12 +10,13 @@ import { useAppContext } from "../context/AppContext";
 const MovieDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { userId } = useAuth();
   const {
     getMovieById,
     getShowsByMovieId,
     addToFavorites,
     removeFromFavorites,
-    favorites,
+    userFavorites,
     movies,
   } = useAppContext();
 
@@ -58,8 +60,11 @@ const MovieDetails = () => {
         const dt = buildDateTimeMap(shows || []);
         setDateTime(dt);
 
-        if (favorites && Array.isArray(favorites)) {
-          const fav = favorites.some((f) => f._id === m?._id || f.id === m?.id);
+        if (userFavorites && Array.isArray(userFavorites)) {
+          const fav = userFavorites.some((f) => {
+            const favMovie = f.movieId || f;
+            return favMovie?._id === m?._id || favMovie?.id === m?.id;
+          });
           setIsFavorite(!!fav);
         }
       } catch (error) {
@@ -72,17 +77,29 @@ const MovieDetails = () => {
     };
 
     load();
-  }, [id]);
+  }, [id, userFavorites, getMovieById, getShowsByMovieId]);
 
   const handleFavorite = async () => {
     try {
-      if (!movie) return;
+      console.log("MovieDetails: handleFavorite called -", {
+        movie,
+        userId,
+        isFavorite,
+      });
+
+      if (!movie || !userId) {
+        toast.error("Please sign in to add favorites");
+        return;
+      }
+
       if (isFavorite) {
-        await removeFromFavorites(movie._id || movie.id);
+        console.log("MovieDetails: Removing from favorites");
+        await removeFromFavorites(userId, movie._id || movie.id);
         setIsFavorite(false);
         toast.success("Removed from favorites");
       } else {
-        await addToFavorites(movie._id || movie.id);
+        console.log("MovieDetails: Adding to favorites");
+        await addToFavorites(userId, movie._id || movie.id);
         setIsFavorite(true);
         toast.success("Added to favorites");
       }

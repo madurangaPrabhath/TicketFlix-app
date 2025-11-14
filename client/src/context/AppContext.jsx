@@ -44,7 +44,6 @@ export const AppContextProvider = ({ children }) => {
 
   const BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:3000/api";
 
-  // Create axios instance with proper configuration
   const axiosInstance = axios.create({
     baseURL: BASE_URL,
     timeout: 10000,
@@ -53,7 +52,6 @@ export const AppContextProvider = ({ children }) => {
     },
   });
 
-  // Log BASE_URL for debugging
   useEffect(() => {
     console.log("AppContext initialized with BASE_URL:", BASE_URL);
   }, []);
@@ -423,10 +421,13 @@ export const AppContextProvider = ({ children }) => {
 
   const getUserFavorites = async (userId) => {
     try {
+      console.log("AppContext: Fetching favorites for userId:", userId);
       const response = await axiosInstance.get(`/users/${userId}/favorites`);
+      console.log("AppContext: Got response:", response.data);
       setUserFavorites(response.data.data || []);
       return response.data.data;
     } catch (err) {
+      console.error("AppContext: Error fetching favorites:", err);
       handleError(err, "Failed to fetch favorites");
       return [];
     }
@@ -434,13 +435,16 @@ export const AppContextProvider = ({ children }) => {
 
   const addToFavorites = async (userId, movieId) => {
     try {
+      console.log("AppContext: Adding to favorites -", { userId, movieId });
       const response = await axiosInstance.post(`/users/${userId}/favorites`, {
         movieId,
       });
+      console.log("AppContext: Added to favorites response:", response.data);
       await getUserFavorites(userId);
       handleSuccess("Added to favorites!");
       return response.data.data;
     } catch (err) {
+      console.error("AppContext: Error adding to favorites:", err);
       handleError(err, "Failed to add to favorites");
       return null;
     }

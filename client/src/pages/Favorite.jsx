@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "@clerk/clerk-react";
 import {
   Heart,
   Trash2,
@@ -15,7 +16,9 @@ import toast from "react-hot-toast";
 
 const Favorite = () => {
   const navigate = useNavigate();
-  const { getUserFavorites, removeFromFavorites, favorites } = useAppContext();
+  const { userId } = useAuth();
+  const { getUserFavorites, removeFromFavorites, userFavorites } =
+    useAppContext();
   const [favoritesList, setFavoritesList] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("recently-added");
@@ -25,8 +28,12 @@ const Favorite = () => {
     const loadFavorites = async () => {
       try {
         setIsLoading(true);
-        const userFavorites = await getUserFavorites();
-        setFavoritesList(userFavorites || []);
+        if (userId) {
+          console.log("Loading favorites for userId:", userId);
+          const userFavorites = await getUserFavorites(userId);
+          console.log("Received favorites from API:", userFavorites);
+          setFavoritesList(userFavorites || []);
+        }
       } catch (error) {
         console.error("Error loading favorites:", error);
         toast.error("Failed to load favorites");
@@ -37,32 +44,52 @@ const Favorite = () => {
     };
 
     loadFavorites();
-  }, []);
+  }, [userId]);
+
+  useEffect(() => {
+    console.log("userFavorites from AppContext changed:", userFavorites);
+    if (userFavorites && Array.isArray(userFavorites)) {
+      console.log("Setting favoritesList to userFavorites");
+      setFavoritesList(userFavorites);
+    }
+  }, [userFavorites]);
 
   const filteredFavorites = favoritesList
-    .filter((movie) =>
-      movie.title.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .sort((a, b) => {
+    .filter((fav) => {
+      const movie = fav.movieId || fav;
+      const title = movie?.title || "";
+      return title.toLowerCase().includes(searchQuery.toLowerCase());
+    })
+    .sort((favA, favB) => {
+      const movieA = favA.movieId || favA;
+      const movieB = favB.movieId || favB;
+
       switch (sortBy) {
         case "recently-added":
           return (
-            new Date(b.createdAt || b.addedAt || 0) -
-            new Date(a.createdAt || a.addedAt || 0)
+            new Date(favB.addedAt || favB.createdAt || 0) -
+            new Date(favA.addedAt || favA.createdAt || 0)
           );
         case "title":
-          return a.title.localeCompare(b.title);
+          return (movieA?.title || "").localeCompare(movieB?.title || "");
         case "rating":
-          return (b.vote_average || 0) - (a.vote_average || 0);
+          return (movieB?.vote_average || 0) - (movieA?.vote_average || 0);
         default:
           return 0;
       }
     });
 
-  const handleRemoveFavorite = async (movieId) => {
+  console.log("favoritesList:", favoritesList);
+  console.log("filteredFavorites:", filteredFavorites);
+
+  const handleRemoveFavorite = async (favoriteId) => {
     try {
-      await removeFromFavorites(movieId);
-      setFavoritesList(favoritesList.filter((movie) => movie._id !== movieId));
+      if (!userId) return;
+      await removeFromFavorites(userId, favoriteId);
+      const updatedList = favoritesList.filter(
+        (movie) => movie._id !== favoriteId
+      );
+      setFavoritesList(updatedList);
       toast.success("Removed from favorites");
     } catch (error) {
       console.error("Error removing favorite:", error);
@@ -74,15 +101,19 @@ const Favorite = () => {
     if (window.confirm("Are you sure you want to remove all favorites?")) {
       try {
         setIsLoading(true);
-        // Remove all favorites one by one
-        for (const movie of favoritesList) {
-          await removeFromFavorites(movie._id);
+        if (!userId) return;
+        for (const fav of favoritesList) {
+          await removeFromFavorites(userId, fav._id);
         }
         setFavoritesList([]);
         toast.success("All favorites cleared");
       } catch (error) {
         console.error("Error clearing favorites:", error);
         toast.error("Failed to clear favorites");
+        if (userId) {
+          const userFavorites = await getUserFavorites(userId);
+          setFavoritesList(userFavorites || []);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -166,23 +197,39 @@ const Favorite = () => {
 
             {filteredFavorites.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
-                {filteredFavorites.map((movie) => (
-                  <div key={movie._id} className="relative group">
-                    <MovieCard movie={movie} />
+                {filteredFavorites.map((fav) => {
+                  const movie = fav.movieId ? fav.movieId : fav;
+                  const favoriteId = fav._id || fav.id;
 
-                    <button
-                      onClick={() => handleRemoveFavorite(movie._id)}
-                      className="absolute top-3 right-3 z-20 p-2 bg-black/80 hover:bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 transform hover:scale-110"
-                      aria-label="Remove from favorites"
-                    >
-                      <Trash2 className="w-4 h-4 text-white" />
-                    </button>
+                  console.log("Rendering favorite:", {
+                    fav,
+                    movie,
+                    favoriteId,
+                  });
 
-                    <div className="absolute top-3 left-3 z-20 p-2 bg-red-600/90 rounded-full">
-                      <Heart className="w-4 h-4 text-white fill-white" />
+                  if (!movie) {
+                    console.warn("No movie found in favorite:", fav);
+                    return null;
+                  }
+
+                  return (
+                    <div key={favoriteId} className="relative group">
+                      <MovieCard movie={movie} />
+
+                      <button
+                        onClick={() => handleRemoveFavorite(favoriteId)}
+                        className="absolute top-3 right-3 z-20 p-2 bg-black/80 hover:bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 transform hover:scale-110"
+                        aria-label="Remove from favorites"
+                      >
+                        <Trash2 className="w-4 h-4 text-white" />
+                      </button>
+
+                      <div className="absolute top-3 left-3 z-20 p-2 bg-red-600/90 rounded-full">
+                        <Heart className="w-4 h-4 text-white fill-white" />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-20">

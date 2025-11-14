@@ -219,6 +219,8 @@ export const getUserFavorites = async (req, res) => {
     const { userId } = req.params;
     const { page = 1, limit = 10 } = req.query;
 
+    console.log("Server: getUserFavorites called -", { userId, page, limit });
+
     if (!userId) {
       return res.status(400).json({
         success: false,
@@ -234,6 +236,8 @@ export const getUserFavorites = async (req, res) => {
       .limit(parseInt(limit))
       .sort({ addedAt: -1 });
 
+    console.log("Server: Found favorites:", favorites);
+
     const total = await Favorite.countDocuments({ userId });
 
     res.status(200).json({
@@ -247,6 +251,7 @@ export const getUserFavorites = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("Server: Error fetching favorites:", error);
     res.status(500).json({
       success: false,
       message: "Error fetching favorites",
@@ -260,6 +265,8 @@ export const addToFavorites = async (req, res) => {
     const { userId } = req.params;
     const { movieId } = req.body;
 
+    console.log("Server: addToFavorites called -", { userId, movieId });
+
     if (!userId || !movieId) {
       return res.status(400).json({
         success: false,
@@ -270,6 +277,7 @@ export const addToFavorites = async (req, res) => {
     const existing = await Favorite.findOne({ userId, movieId });
 
     if (existing) {
+      console.log("Server: Movie already in favorites");
       return res.status(400).json({
         success: false,
         message: "Movie already in favorites",
@@ -283,6 +291,11 @@ export const addToFavorites = async (req, res) => {
     });
 
     await favorite.save();
+    
+    // Populate movieId before sending response
+    await favorite.populate("movieId");
+    
+    console.log("Server: Favorite saved successfully:", favorite);
 
     res.status(201).json({
       success: true,
@@ -290,6 +303,7 @@ export const addToFavorites = async (req, res) => {
       data: favorite,
     });
   } catch (error) {
+    console.error("Server: Error adding to favorites:", error);
     res.status(500).json({
       success: false,
       message: "Error adding to favorites",
