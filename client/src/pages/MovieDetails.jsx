@@ -1,53 +1,102 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { dummyDateTimeData, dummyShowsData } from "../assets/assets";
 import MovieCard from "../components/MovieCard";
 import DateSelect from "../components/DateSelect";
-import {
-  Play,
-  Heart,
-  Star,
-  Calendar,
-  Clock,
-  Share2,
-} from "lucide-react";
+import { Play, Heart, Star, Calendar, Clock, Share2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useAppContext } from "../context/AppContext";
 
 const MovieDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [show, setShow] = useState(null);
+  const {
+    getMovieById,
+    getShowsByMovieId,
+    addToFavorites,
+    removeFromFavorites,
+    favorites,
+    movies,
+  } = useAppContext();
+
+  const [movie, setMovie] = useState(null);
+  const [dateTime, setDateTime] = useState({});
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [showTrailer, setShowTrailer] = useState(false);
 
-  const getShow = async () => {
-    const movie = dummyShowsData.find((show) => show._id === id);
-    if (movie) {
-      setShow({
-        movie: movie,
-        dateTime: dummyDateTimeData,
+  const formatRuntime = (minutes) => {
+    const hours = Math.floor((minutes || 0) / 60);
+    const mins = (minutes || 0) % 60;
+    return `${hours}h ${mins}m`;
+  };
+
+  const buildDateTimeMap = (shows = []) => {
+    const map = {};
+    (shows || []).forEach((s) => {
+      const d = s.showDate
+        ? new Date(s.showDate).toISOString().split("T")[0]
+        : null;
+      if (!d) return;
+      if (!map[d]) map[d] = [];
+      map[d].push({
+        id: s._id || s.id,
+        time: s.showTime || s.time || "",
+        theater: s.theater || null,
+        pricing: s.pricing || null,
       });
-    }
+    });
+    return map;
   };
 
   useEffect(() => {
-    getShow();
-    window.scrollTo(0, 0);
+    const load = async () => {
+      try {
+        setIsLoading(true);
+        const m = await getMovieById(id);
+        const shows = await getShowsByMovieId(id);
+        setMovie(m || null);
+        const dt = buildDateTimeMap(shows || []);
+        setDateTime(dt);
+
+        if (favorites && Array.isArray(favorites)) {
+          const fav = favorites.some((f) => f._id === m?._id || f.id === m?.id);
+          setIsFavorite(!!fav);
+        }
+      } catch (error) {
+        console.error("Failed to load movie details:", error);
+        toast.error("Failed to load movie details");
+      } finally {
+        setIsLoading(false);
+        window.scrollTo(0, 0);
+      }
+    };
+
+    load();
   }, [id]);
 
-  const handleFavorite = () => {
-    setIsFavorite(!isFavorite);
-    toast.success(
-      isFavorite ? "Removed from favorites" : "Added to favorites",
-      { icon: "❤️" }
-    );
+  const handleFavorite = async () => {
+    try {
+      if (!movie) return;
+      if (isFavorite) {
+        await removeFromFavorites(movie._id || movie.id);
+        setIsFavorite(false);
+        toast.success("Removed from favorites");
+      } else {
+        await addToFavorites(movie._id || movie.id);
+        setIsFavorite(true);
+        toast.success("Added to favorites");
+      }
+    } catch (err) {
+      console.error("Favorite toggle failed:", err);
+      toast.error("Failed to update favorites");
+    }
   };
 
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: show?.movie.title,
-        text: show?.movie.overview,
+        title: movie?.title,
+        text: movie?.overview,
         url: window.location.href,
       });
     } else {
@@ -56,13 +105,7 @@ const MovieDetails = () => {
     }
   };
 
-  const formatRuntime = (minutes) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
-  };
-
-  if (!show) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-black pt-20 pb-16 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -73,13 +116,23 @@ const MovieDetails = () => {
     );
   }
 
+  if (!movie) {
+    return (
+      <div className="min-h-screen bg-black pt-20 pb-16 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-white text-lg">Movie not found</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black">
       <div className="relative w-full">
         <div className="absolute inset-0 h-[40vh] sm:h-[50vh] md:h-[65vh] lg:h-[75vh]">
           <img
-            src={show.movie.backdrop_path || show.movie.poster_path}
-            alt={show.movie.title}
+            src={movie.backdrop_path || movie.poster_path}
+            alt={movie.title}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/50 to-black"></div>
@@ -90,8 +143,8 @@ const MovieDetails = () => {
           <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 md:gap-8 lg:gap-12 max-w-7xl">
             <div className="flex-shrink-0 w-full sm:w-60 md:w-72 lg:w-80 mx-auto sm:mx-0">
               <img
-                src={show.movie.poster_path}
-                alt={show.movie.title}
+                src={movie.poster_path}
+                alt={movie.title}
                 className="w-full rounded-lg sm:rounded-2xl shadow-2xl shadow-black/80 border border-white/10 sm:border-2 hover:border-white/20 transition-colors"
               />
             </div>
@@ -99,20 +152,20 @@ const MovieDetails = () => {
             <div className="flex-1 flex flex-col justify-center space-y-3 sm:space-y-4 md:space-y-6">
               <div className="flex flex-wrap gap-2">
                 <span className="px-2 sm:px-3 py-1 sm:py-1.5 bg-white/10 backdrop-blur-sm text-white text-xs font-medium rounded-full border border-white/20 hover:bg-white/20 transition-colors">
-                  {show.movie.original_language?.toUpperCase() || "EN"}
+                  {movie.original_language?.toUpperCase() || "EN"}
                 </span>
                 <span className="px-2 sm:px-3 py-1 sm:py-1.5 bg-red-600/20 backdrop-blur-sm text-red-300 text-xs font-medium rounded-full border border-red-600/30 hover:bg-red-600/30 transition-colors">
-                  {show.movie.release_date?.split("-")[0]}
+                  {movie.release_date?.split("-")[0]}
                 </span>
               </div>
 
               <div>
                 <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white leading-tight">
-                  {show.movie.title}
+                  {movie.title}
                 </h1>
-                {show.movie.tagline && (
+                {movie.tagline && (
                   <p className="text-gray-400 text-xs sm:text-sm md:text-base lg:text-lg italic mt-2 sm:mt-3">
-                    "{show.movie.tagline}"
+                    "{movie.tagline}"
                   </p>
                 )}
               </div>
@@ -121,43 +174,29 @@ const MovieDetails = () => {
                 <div className="flex items-center gap-1.5 sm:gap-2 bg-yellow-500/15 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-yellow-500/30 hover:bg-yellow-500/25 transition-colors text-xs sm:text-sm">
                   <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 text-yellow-400 fill-yellow-400 flex-shrink-0" />
                   <span className="text-white font-semibold">
-                    {show.movie.vote_average?.toFixed(1)}
-                  </span>
-                  <span className="text-gray-400 hidden sm:inline text-xs">
-                    ({show.movie.vote_count?.toLocaleString()})
+                    {movie.vote_average?.toFixed(1)}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-1.5 sm:gap-2 text-gray-300 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-gray-600/30 hover:border-gray-500/50 transition-colors text-xs sm:text-sm">
                   <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 flex-shrink-0" />
-                  <span>{formatRuntime(show.movie.runtime)}</span>
+                  <span>{formatRuntime(movie.runtime)}</span>
                 </div>
 
                 <div className="flex items-center gap-1.5 sm:gap-2 text-gray-300 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border border-gray-600/30 hover:border-gray-500/50 transition-colors text-xs sm:text-sm">
                   <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 flex-shrink-0" />
                   <span>
-                    {new Date(show.movie.release_date).toLocaleDateString(
-                      "en-US",
-                      { year: "numeric", month: "short", day: "numeric" }
-                    )}
+                    {new Date(movie.release_date).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
                   </span>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-1.5 sm:gap-2 pt-2">
-                {show.movie.genres?.slice(0, 4).map((genre) => (
-                  <span
-                    key={genre.id}
-                    className="px-2 sm:px-3 py-1 sm:py-1.5 bg-neutral-800/60 backdrop-blur-sm text-gray-300 text-xs sm:text-sm rounded-full border border-neutral-700 hover:bg-neutral-800/80 transition-colors"
-                  >
-                    {genre.name}
-                  </span>
-                ))}
-              </div>
-
-              <p className="text-gray-300 text-xs sm:text-sm md:text-base leading-relaxed max-w-2xl pt-2 line-clamp-3 sm:line-clamp-none">
-                {show.movie.overview?.slice(0, 150)}
-                {show.movie.overview?.length > 150 ? "..." : ""}
+              <p className="text-gray-300 text-xs sm:text-sm md:text-base leading-relaxed max-w-3xl pt-4">
+                {movie.overview || "No description available"}
               </p>
 
               <div className="flex flex-wrap gap-1.5 sm:gap-2 md:gap-3 pt-3 sm:pt-4">
@@ -205,16 +244,16 @@ const MovieDetails = () => {
       </div>
 
       <div id="dateSelect" className="scroll-mt-20">
-        <DateSelect dateTime={show.dateTime} id={id} />
+        <DateSelect dateTime={dateTime} id={id} />
       </div>
 
-      {show.movie.casts && show.movie.casts.length > 0 && (
+      {movie.casts && movie.casts.length > 0 && (
         <div className="px-4 sm:px-6 md:px-12 lg:px-36 py-8 sm:py-12 md:py-16 bg-black">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-6 sm:mb-8">
             Cast
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
-            {show.movie.casts.slice(0, 12).map((cast, index) => (
+            {movie.casts.slice(0, 12).map((cast, index) => (
               <div key={index} className="group">
                 <div className="relative overflow-hidden rounded-lg sm:rounded-xl aspect-square mb-2 sm:mb-3">
                   <img
@@ -238,27 +277,44 @@ const MovieDetails = () => {
         </div>
       )}
 
-      <div className="px-4 sm:px-6 md:px-12 lg:px-36 py-8 sm:py-12 md:py-16 bg-neutral-950">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-6 sm:mb-8">
-          More Like This
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4 lg:gap-6 mb-6 sm:mb-8">
-          {dummyShowsData
-            .filter((movie) => movie._id !== id)
-            .slice(0, 6)
-            .map((movie) => (
-              <MovieCard key={movie._id} movie={movie} />
-            ))}
+      {(movies || []).filter((m) => (m._id || m.id) !== (movie._id || movie.id))
+        .length > 0 ? (
+        <div className="px-4 sm:px-6 md:px-12 lg:px-36 py-8 sm:py-12 md:py-16 bg-neutral-950">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-6 sm:mb-8">
+            More Like This
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4 lg:gap-6 mb-6 sm:mb-8">
+            {(movies || [])
+              .filter((m) => (m._id || m.id) !== (movie._id || movie.id))
+              .slice(0, 6)
+              .map((m) => (
+                <MovieCard key={m._id || m.id} movie={m} />
+              ))}
+          </div>
+          <div className="flex justify-center">
+            <button
+              onClick={() => navigate("/movies")}
+              className="px-6 sm:px-8 py-2.5 sm:py-3 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg font-medium transition-colors duration-300 text-sm sm:text-base"
+            >
+              Show More Movies
+            </button>
+          </div>
         </div>
-        <div className="flex justify-center">
-          <button
-            onClick={() => navigate("/movies")}
-            className="px-6 sm:px-8 py-2.5 sm:py-3 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg font-medium transition-colors duration-300 text-sm sm:text-base"
-          >
-            Show More Movies
-          </button>
+      ) : (
+        <div className="px-4 sm:px-6 md:px-12 lg:px-36 py-8 sm:py-12 md:py-16 bg-neutral-950">
+          <div className="text-center py-8">
+            <p className="text-gray-400 text-sm sm:text-base">
+              Browse more movies in our collection
+            </p>
+            <button
+              onClick={() => navigate("/movies")}
+              className="mt-4 px-6 sm:px-8 py-2.5 sm:py-3 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-lg font-medium transition-colors duration-300 text-sm sm:text-base"
+            >
+              Explore All Movies
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {showTrailer && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
