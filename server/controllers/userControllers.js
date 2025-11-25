@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import Booking from "../models/Booking.js";
 import Favorite from "../models/Favorite.js";
 import axios from "axios";
+import { clerkClient } from "@clerk/clerk-sdk-node";
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
@@ -362,6 +363,26 @@ export const addToFavorites = async (req, res) => {
     const savedFavorite = await favorite.save();
     console.log("Server: Favorite saved successfully:", savedFavorite);
 
+    // Update Clerk user metadata with favorite count
+    try {
+      const favoriteCount = await Favorite.countDocuments({ userId });
+      await clerkClient.users.updateUserMetadata(userId, {
+        privateMetadata: {
+          favoritesCount: favoriteCount,
+        },
+      });
+      console.log(
+        "Server: Updated Clerk metadata - favoritesCount:",
+        favoriteCount
+      );
+    } catch (clerkError) {
+      console.error(
+        "Server: Error updating Clerk metadata:",
+        clerkError.message
+      );
+      // Continue even if Clerk update fails
+    }
+
     try {
       await savedFavorite.populate("movieId");
       console.log("Server: Favorite populated:", savedFavorite);
@@ -406,6 +427,26 @@ export const removeFromFavorites = async (req, res) => {
         success: false,
         message: "Favorite not found",
       });
+    }
+
+    // Update Clerk user metadata with new favorite count
+    try {
+      const favoriteCount = await Favorite.countDocuments({ userId });
+      await clerkClient.users.updateUserMetadata(userId, {
+        privateMetadata: {
+          favoritesCount: favoriteCount,
+        },
+      });
+      console.log(
+        "Server: Updated Clerk metadata - favoritesCount:",
+        favoriteCount
+      );
+    } catch (clerkError) {
+      console.error(
+        "Server: Error updating Clerk metadata:",
+        clerkError.message
+      );
+      // Continue even if Clerk update fails
     }
 
     res.status(200).json({
@@ -629,6 +670,50 @@ export const updateNotificationSettings = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error updating notification settings",
+      error: error.message,
+    });
+  }
+};
+
+// Sync favorites count to Clerk metadata for a specific user
+export const syncFavoritesToClerk = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "userId is required",
+      });
+    }
+
+    // Get current favorites count
+    const favoriteCount = await Favorite.countDocuments({ userId });
+
+    // Update Clerk user metadata
+    await clerkClient.users.updateUserMetadata(userId, {
+      privateMetadata: {
+        favoritesCount: favoriteCount,
+      },
+    });
+
+    console.log(
+      `Server: Synced favorites to Clerk for user ${userId} - Count: ${favoriteCount}`
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Favorites count synced to Clerk successfully",
+      data: {
+        userId,
+        favoritesCount: favoriteCount,
+      },
+    });
+  } catch (error) {
+    console.error("Server: Error syncing favorites to Clerk:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error syncing favorites to Clerk",
       error: error.message,
     });
   }

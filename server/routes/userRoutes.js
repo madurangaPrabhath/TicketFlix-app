@@ -13,6 +13,7 @@ import {
   getUserStats,
   getUserDashboard,
   updateNotificationSettings,
+  syncFavoritesToClerk,
 } from "../controllers/userControllers.js";
 
 import {
@@ -60,6 +61,7 @@ userRoutes.get("/favorite/check", isFavorite);
 userRoutes.get("/:userId/favorites", getUserFavorites);
 userRoutes.post("/:userId/favorites", addToFavorites);
 userRoutes.delete("/:userId/favorites/:favoriteId", removeFromFavorites);
+userRoutes.post("/:userId/favorites/sync-clerk", syncFavoritesToClerk);
 userRoutes.get("/:userId/stats", getUserStats);
 userRoutes.get("/:userId/dashboard", getUserDashboard);
 userRoutes.put("/:userId/notifications", updateNotificationSettings);

@@ -425,6 +425,16 @@ export const AppContextProvider = ({ children }) => {
       const response = await axiosInstance.get(`/users/${userId}/favorites`);
       console.log("AppContext: Got response:", response.data);
       setUserFavorites(response.data.data || []);
+
+      // Sync favorites count to Clerk metadata
+      try {
+        await axiosInstance.post(`/users/${userId}/favorites/sync-clerk`);
+        console.log("AppContext: Synced favorites count to Clerk");
+      } catch (syncErr) {
+        console.error("AppContext: Error syncing to Clerk:", syncErr.message);
+        // Don't fail the whole operation if sync fails
+      }
+
       return response.data.data;
     } catch (err) {
       console.error("AppContext: Error fetching favorites:", err);
