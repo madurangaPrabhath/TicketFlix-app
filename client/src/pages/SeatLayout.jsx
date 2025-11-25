@@ -31,27 +31,35 @@ const SeatLayout = () => {
   const fetchMovieAndShows = async () => {
     try {
       setLoading(true);
+      console.log("Fetching movie and shows for ID:", id);
+
       const movieRes = await axios.get(`${API_BASE_URL}/movies/${id}`);
       const showsRes = await axios.get(`${API_BASE_URL}/shows/movie/${id}`);
 
+      console.log("Movie data:", movieRes.data);
+      console.log("Shows data:", showsRes.data);
+
+      const movieData = movieRes.data.data;
+      const showsData = showsRes.data.data || [];
+
       setShow({
-        movie: movieRes.data.data,
-        shows: showsRes.data.data || [],
+        movie: movieData,
+        shows: showsData,
       });
 
-      // Map shows with available seats info
-      const times = showsRes.data.data.map((show) => ({
+      const times = showsData.map((show) => ({
         ...show,
-        availableSeats: 150 - (show.bookedSeats?.length || 0),
-        showDate: show.date || show.showDate,
+        availableSeats:
+          show.seats?.available || 150 - (show.seats?.booked?.length || 0),
+        showDate: show.showDate,
       }));
 
+      console.log("Available times:", times);
       setAvailableTimes(times);
+      setShows(showsData);
 
-      if (!selectedDate && showsRes.data.data.length > 0) {
-        const firstShowDate = new Date(
-          showsRes.data.data[0].date || showsRes.data.data[0].showDate
-        )
+      if (!selectedDate && showsData.length > 0) {
+        const firstShowDate = new Date(showsData[0].showDate)
           .toISOString()
           .split("T")[0];
         setSelectedDate(firstShowDate);
@@ -60,17 +68,35 @@ const SeatLayout = () => {
       setLoading(false);
     } catch (error) {
       console.error("Error fetching movie and shows:", error);
+      toast.error("Failed to load movie details");
+
+      if (error.response?.status !== 404) {
+        try {
+          const movieRes = await axios.get(`${API_BASE_URL}/movies/${id}`);
+          setShow({
+            movie: movieRes.data.data,
+            shows: [],
+          });
+        } catch (movieError) {
+          console.error("Error fetching movie:", movieError);
+        }
+      }
+
       setLoading(false);
     }
   };
 
   const fetchBookedSeats = async (showId) => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/shows/${showId}`);
-      const seats = res.data.data?.bookedSeats || [];
+      console.log("Fetching booked seats for show:", showId);
+      const res = await axios.get(`${API_BASE_URL}/shows/details/${showId}`);
+      console.log("Show details:", res.data);
+      const seats = res.data.data?.seats?.booked || [];
+      console.log("Booked seats:", seats);
       setBookedSeats(seats);
     } catch (error) {
       console.error("Error fetching booked seats:", error);
+      toast.error("Failed to load seat availability");
       setBookedSeats([]);
     }
   };
@@ -79,9 +105,10 @@ const SeatLayout = () => {
     fetchMovieAndShows();
   }, [id]);
 
-  const handleTimeSelect = (showTime) => {
-    setSelectedTime(showTime.showTime || showTime.time);
-    fetchBookedSeats(showTime._id);
+  const handleTimeSelect = (showData) => {
+    console.log("Selected show:", showData);
+    setSelectedTime(showData.showTime);
+    fetchBookedSeats(showData._id);
   };
 
   useEffect(() => {
@@ -180,11 +207,11 @@ const SeatLayout = () => {
     );
   }
 
-  if (!show) {
+  if (!show || !show.movie) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center pt-20">
         <div className="text-center px-4">
-          <p className="text-white text-lg mb-4">Show not found</p>
+          <p className="text-white text-lg mb-4">Movie not found</p>
           <button
             onClick={() => navigate("/movies")}
             className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium"
@@ -217,35 +244,61 @@ const SeatLayout = () => {
               </h2>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3">
-                {availableTimes
-                  .filter((item) => {
+                {availableTimes.length === 0 ? (
+                  <div className="col-span-full text-center py-8">
+                    <p className="text-gray-400 text-sm mb-2">
+                      No shows available for this movie yet.
+                    </p>
+                    <p className="text-gray-500 text-xs">
+                      Please check back later or contact the admin to add shows.
+                    </p>
+                  </div>
+                ) : availableTimes.filter((item) => {
                     if (!selectedDate) return true;
-                    const itemDate = new Date(item.showDate || item.date)
+                    const itemDate = new Date(item.showDate)
                       .toISOString()
                       .split("T")[0];
                     return itemDate === selectedDate;
-                  })
-                  .map((item) => (
-                    <button
-                      key={item._id}
-                      onClick={() => handleTimeSelect(item)}
-                      className={`
-                        p-2 sm:p-3 rounded-lg border-2 transition-all duration-200 text-center
-                        ${
-                          selectedTime === item.showTime
-                            ? "bg-green-600 border-green-500 text-white shadow-lg shadow-green-600/50 scale-105"
-                            : "bg-neutral-800 border-neutral-700 text-gray-300 hover:border-green-500 hover:bg-neutral-700 active:scale-95"
-                        }
-                      `}
-                    >
-                      <p className="text-xs sm:text-sm font-semibold">
-                        {item.showTime || item.time}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5 sm:mt-1">
-                        {item.availableSeats} seats
-                      </p>
-                    </button>
-                  ))}
+                  }).length === 0 ? (
+                  <div className="col-span-full text-center py-8">
+                    <p className="text-gray-400 text-sm mb-2">
+                      No shows available for the selected date.
+                    </p>
+                    <p className="text-gray-500 text-xs">
+                      Please try a different date.
+                    </p>
+                  </div>
+                ) : (
+                  availableTimes
+                    .filter((item) => {
+                      if (!selectedDate) return true;
+                      const itemDate = new Date(item.showDate)
+                        .toISOString()
+                        .split("T")[0];
+                      return itemDate === selectedDate;
+                    })
+                    .map((item) => (
+                      <button
+                        key={item._id}
+                        onClick={() => handleTimeSelect(item)}
+                        className={`
+                          p-2 sm:p-3 rounded-lg border-2 transition-all duration-200 text-center
+                          ${
+                            selectedTime === item.showTime
+                              ? "bg-green-600 border-green-500 text-white shadow-lg shadow-green-600/50 scale-105"
+                              : "bg-neutral-800 border-neutral-700 text-gray-300 hover:border-green-500 hover:bg-neutral-700 active:scale-95"
+                          }
+                        `}
+                      >
+                        <p className="text-xs sm:text-sm font-semibold">
+                          {item.showTime}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5 sm:mt-1">
+                          {item.availableSeats} seats
+                        </p>
+                      </button>
+                    ))
+                )}
               </div>
             </div>
 
@@ -433,7 +486,7 @@ const SeatLayout = () => {
                   }
 
                   const selectedShow = availableTimes.find(
-                    (item) => (item.showTime || item.time) === selectedTime
+                    (item) => item.showTime === selectedTime
                   );
 
                   if (!selectedShow?._id) {
@@ -441,14 +494,23 @@ const SeatLayout = () => {
                     return;
                   }
 
+                  console.log("Proceeding to checkout with:", {
+                    show: selectedShow,
+                    seats: selectedSeats,
+                    total: grandTotal,
+                  });
+
                   navigate(`/booking`, {
                     state: {
                       movie: show.movie,
+                      show: selectedShow,
                       date: selectedDate,
                       time: selectedTime,
                       seats: selectedSeats,
                       totalPrice: grandTotal,
                       showId: selectedShow._id,
+                      theater: selectedShow.theater,
+                      pricing: selectedShow.pricing,
                     },
                   });
                 }}

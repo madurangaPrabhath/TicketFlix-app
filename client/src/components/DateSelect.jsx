@@ -97,7 +97,7 @@ const DateSelect = ({ dateTime, id }) => {
     const dateObj = new Date(selectedDate);
     const formattedDate = dateObj.toISOString().split("T")[0];
 
-    navigate(`/seat-layout/${id}/${formattedDate}`, {
+    navigate(`/movie/${id}/${formattedDate}`, {
       state: { selectedDate: formattedDate },
     });
     window.scrollTo(0, 0);

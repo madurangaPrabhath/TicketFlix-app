@@ -8,18 +8,13 @@ export const getShowsByMovieId = async (req, res) => {
 
     console.log("Server: getShowsByMovieId called -", { movieId });
 
-    // Try to find by ObjectId first (if it's a valid MongoDB ID)
-    let shows = [];
-    try {
-      shows = await Show.find({ movieId })
-        .populate("movieId", "title poster_path backdrop_path")
-        .sort({ showDate: 1, showTime: 1 });
-    } catch (err) {
-      console.log(
-        "Server: movieId is not a valid ObjectId (likely TMDB ID), returning empty shows"
-      );
-      shows = [];
-    }
+    // Convert to number since movieId is stored as Number (TMDB ID)
+    const shows = await Show.find({ movieId: Number(movieId) }).sort({
+      showDate: 1,
+      showTime: 1,
+    });
+
+    console.log(`Server: Found ${shows.length} shows for movieId ${movieId}`);
 
     // Return empty array if no shows found (don't error out)
     res.status(200).json({
@@ -49,12 +44,10 @@ export const getShowsByDate = async (req, res) => {
     endDate.setHours(23, 59, 59, 999);
 
     const shows = await Show.find({
-      movieId,
+      movieId: Number(movieId),
       showDate: { $gte: startDate, $lte: endDate },
       status: "active",
-    })
-      .populate("movieId", "title poster_path")
-      .sort({ showTime: 1 });
+    }).sort({ showTime: 1 });
 
     if (!shows || shows.length === 0) {
       return res.status(404).json({
@@ -81,10 +74,7 @@ export const getShowById = async (req, res) => {
   try {
     const { showId } = req.params;
 
-    const show = await Show.findById(showId).populate(
-      "movieId",
-      "title poster_path backdrop_path runtime director cast"
-    );
+    const show = await Show.findById(showId);
 
     if (!show) {
       return res.status(404).json({
