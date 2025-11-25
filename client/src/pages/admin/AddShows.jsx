@@ -33,6 +33,7 @@ const AddShows = () => {
     try {
       setIsLoading(true);
       const data = await fetchAllMovies();
+      console.log("Fetched movies:", data);
       setMovies(data || []);
     } catch (error) {
       console.error("Error fetching movies:", error);
@@ -132,15 +133,27 @@ const AddShows = () => {
     }
 
     try {
-      for (const timeSlot of selectedTimes) {
-        const [date, time] = timeSlot.split("T");
+      const showPromises = selectedTimes.map(async (timeSlot) => {
+        const dateTime = new Date(timeSlot);
+        const date = dateTime.toISOString().split("T")[0];
+        const time = dateTime.toTimeString().split(" ")[0].substring(0, 5);
+
+        const movieId = selectedMovie._id || selectedMovie.id;
+        console.log("Creating show with:", {
+          movieId,
+          movieTitle: selectedMovie.title,
+          theater,
+          city,
+          date,
+          time,
+        });
 
         const showData = {
-          movieId: selectedMovie.id,
+          movieId: movieId,
           theater: {
-            name: theater,
-            location: city,
-            city: city,
+            name: theater.trim(),
+            location: city.trim(),
+            city: city.trim(),
           },
           showDate: date,
           showTime: time,
@@ -155,12 +168,18 @@ const AddShows = () => {
             premium: parseFloat(premiumPrice),
             vip: parseFloat(vipPrice),
           },
+          status: "active",
         };
 
-        await createShow(showData);
-      }
+        return await createShow(showData);
+      });
 
-      toast.success(`Show(s) added successfully for ${selectedMovie.title}!`);
+      const results = await Promise.all(showPromises);
+      console.log("Shows created successfully:", results);
+
+      toast.success(
+        `${selectedTimes.length} show(s) added successfully for ${selectedMovie.title}!`
+      );
 
       setSelectedMovie(null);
       setTheater("");
@@ -175,7 +194,10 @@ const AddShows = () => {
       setErrors({});
     } catch (error) {
       console.error("Error adding show:", error);
-      toast.error("Failed to add show");
+      console.error("Error response:", error.response?.data);
+      toast.error(
+        error.response?.data?.message || "Failed to add show. Please try again."
+      );
     }
   };
 

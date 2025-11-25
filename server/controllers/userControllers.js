@@ -258,11 +258,9 @@ export const getUserFavorites = async (req, res) => {
 
     const skip = (page - 1) * limit;
 
-    // Count all favorites first
     const total = await Favorite.countDocuments({ userId });
     console.log("Server: Total favorites for user:", total);
 
-    // Fetch favorites WITHOUT populate since movieId can be Mixed type (TMDB ID or ObjectId)
     const favorites = await Favorite.find({ userId })
       .skip(skip)
       .limit(parseInt(limit))
@@ -271,11 +269,9 @@ export const getUserFavorites = async (req, res) => {
 
     console.log("Server: Found favorites count:", favorites.length);
 
-    // Enrich favorites with full movie data from TMDB
     const enrichedFavorites = await Promise.all(
       favorites.map(async (fav) => {
         try {
-          // If movieId is a number (TMDB ID), fetch from TMDB
           if (typeof fav.movieId === "number" || /^\d+$/.test(fav.movieId)) {
             const tmdbMovie = await fetchFromTMDB(`/movie/${fav.movieId}`);
             return {
@@ -343,7 +339,6 @@ export const addToFavorites = async (req, res) => {
       });
     }
 
-    // Check for existing favorite - use strict equality for all types
     const existing = await Favorite.findOne({ userId, movieId }).exec();
 
     if (existing) {
@@ -363,7 +358,6 @@ export const addToFavorites = async (req, res) => {
     const savedFavorite = await favorite.save();
     console.log("Server: Favorite saved successfully:", savedFavorite);
 
-    // Update Clerk user metadata with favorite count
     try {
       const favoriteCount = await Favorite.countDocuments({ userId });
       await clerkClient.users.updateUserMetadata(userId, {
@@ -380,7 +374,6 @@ export const addToFavorites = async (req, res) => {
         "Server: Error updating Clerk metadata:",
         clerkError.message
       );
-      // Continue even if Clerk update fails
     }
 
     try {
@@ -429,7 +422,6 @@ export const removeFromFavorites = async (req, res) => {
       });
     }
 
-    // Update Clerk user metadata with new favorite count
     try {
       const favoriteCount = await Favorite.countDocuments({ userId });
       await clerkClient.users.updateUserMetadata(userId, {
@@ -446,7 +438,6 @@ export const removeFromFavorites = async (req, res) => {
         "Server: Error updating Clerk metadata:",
         clerkError.message
       );
-      // Continue even if Clerk update fails
     }
 
     res.status(200).json({
@@ -675,7 +666,6 @@ export const updateNotificationSettings = async (req, res) => {
   }
 };
 
-// Sync favorites count to Clerk metadata for a specific user
 export const syncFavoritesToClerk = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -687,10 +677,8 @@ export const syncFavoritesToClerk = async (req, res) => {
       });
     }
 
-    // Get current favorites count
     const favoriteCount = await Favorite.countDocuments({ userId });
 
-    // Update Clerk user metadata
     await clerkClient.users.updateUserMetadata(userId, {
       privateMetadata: {
         favoritesCount: favoriteCount,

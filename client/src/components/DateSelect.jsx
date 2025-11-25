@@ -33,7 +33,6 @@ const DateSelect = ({ dateTime, id }) => {
       if (response.data.success && response.data.data) {
         const shows = response.data.data;
 
-        // Extract unique dates from shows - handle both 'date' and 'showDate' fields
         const dateSet = new Set();
         (shows || []).forEach((show) => {
           const showDateField = show.date || show.showDate;
@@ -98,7 +97,6 @@ const DateSelect = ({ dateTime, id }) => {
     const dateObj = new Date(selectedDate);
     const formattedDate = dateObj.toISOString().split("T")[0];
 
-    // Navigate to SeatLayout with movie ID and selected date
     navigate(`/seat-layout/${id}/${formattedDate}`, {
       state: { selectedDate: formattedDate },
     });
