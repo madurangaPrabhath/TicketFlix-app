@@ -30,26 +30,7 @@ import {
   getOccupancyReport,
 } from "../controllers/adminControllers.js";
 
-import {
-  verifyAdminStatus,
-  getAdminStatus,
-  getAdminProfile,
-  updateAdminProfile,
-  getAdminPermissions,
-  validateAdminToken,
-} from "../controllers/adminVerificationController.js";
-
-import { protectAdmin } from "../middleware/auth.js";
-
 const userRoutes = express.Router();
-
-userRoutes.get("/verify/admin-status", verifyAdminStatus);
-userRoutes.post("/verify/admin-token", validateAdminToken);
-userRoutes.get("/admin/:userId/status", getAdminStatus);
-
-userRoutes.get("/admin/profile", protectAdmin, getAdminProfile);
-userRoutes.put("/admin/profile", protectAdmin, updateAdminProfile);
-userRoutes.get("/admin/permissions", protectAdmin, getAdminPermissions);
 
 userRoutes.get("/:userId", getUserProfile);
 userRoutes.put("/:userId", updateUserProfile);
@@ -66,16 +47,17 @@ userRoutes.get("/:userId/stats", getUserStats);
 userRoutes.get("/:userId/dashboard", getUserDashboard);
 userRoutes.put("/:userId/notifications", updateNotificationSettings);
 
-userRoutes.get("/admin/dashboard", protectAdmin, getDashboardStats);
-userRoutes.post("/admin/shows", protectAdmin, createShow);
-userRoutes.get("/admin/shows", protectAdmin, getAllShows);
-userRoutes.put("/admin/shows/:showId", protectAdmin, updateShow);
-userRoutes.delete("/admin/shows/:showId", protectAdmin, deleteShow);
-userRoutes.get("/admin/bookings", protectAdmin, getAllBookings);
-userRoutes.get("/admin/bookings/analytics", protectAdmin, getBookingAnalytics);
-userRoutes.get("/admin/users", protectAdmin, getAllUsers);
-userRoutes.get("/admin/users/:userId", protectAdmin, getUserDetails);
-userRoutes.get("/admin/reports/revenue", protectAdmin, getRevenueReport);
-userRoutes.get("/admin/reports/occupancy", protectAdmin, getOccupancyReport);
+// Admin routes - accessible to all authenticated users
+userRoutes.get("/admin/dashboard", getDashboardStats);
+userRoutes.post("/admin/shows", createShow);
+userRoutes.get("/admin/shows", getAllShows);
+userRoutes.put("/admin/shows/:showId", updateShow);
+userRoutes.delete("/admin/shows/:showId", deleteShow);
+userRoutes.get("/admin/bookings", getAllBookings);
+userRoutes.get("/admin/bookings/analytics", getBookingAnalytics);
+userRoutes.get("/admin/users", getAllUsers);
+userRoutes.get("/admin/users/:userId", getUserDetails);
+userRoutes.get("/admin/reports/revenue", getRevenueReport);
+userRoutes.get("/admin/reports/occupancy", getOccupancyReport);
 
 export default userRoutes;

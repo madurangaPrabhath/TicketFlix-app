@@ -15,7 +15,6 @@ export const AppContextProvider = ({ children }) => {
   const [userStats, setUserStats] = useState(null);
   const [userDashboard, setUserDashboard] = useState(null);
 
-  const [isAdmin, setIsAdmin] = useState(false);
   const [adminDashboard, setAdminDashboard] = useState(null);
   const [adminShows, setAdminShows] = useState([]);
   const [adminBookings, setAdminBookings] = useState([]);
@@ -77,7 +76,6 @@ export const AppContextProvider = ({ children }) => {
     try {
       setLoading(true);
       if (userId) {
-        await checkAdminStatus();
         await fetchUserProfile(userId);
         await fetchUserDashboard(userId);
       }
@@ -85,23 +83,6 @@ export const AppContextProvider = ({ children }) => {
       handleError(err, "Failed to initialize user");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const checkAdminStatus = async () => {
-    try {
-      const response = await axiosInstance.get("/users/verify/admin-status");
-      if (response.data.success && response.data.isAdmin) {
-        setIsAdmin(true);
-        return true;
-      } else {
-        setIsAdmin(false);
-        return false;
-      }
-    } catch (err) {
-      console.error("Error checking admin status:", err);
-      setIsAdmin(false);
-      return false;
     }
   };
 
@@ -721,7 +702,6 @@ export const AppContextProvider = ({ children }) => {
     isLoaded,
     userId,
     clerkUser,
-    isAdmin,
     loading,
     error,
     success,
