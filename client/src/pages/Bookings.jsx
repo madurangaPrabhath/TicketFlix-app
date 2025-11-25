@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import {
   Calendar,
@@ -19,33 +19,74 @@ import axios from "axios";
 
 const Bookings = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const location = useLocation();
+  const { userId } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
+  const [creatingBooking, setCreatingBooking] = useState(false);
 
   const API_BASE_URL = "http://localhost:3000/api";
+
+  const createBooking = async (bookingData) => {
+    try {
+      setCreatingBooking(true);
+      console.log("Creating booking with data:", bookingData);
+
+      const payload = {
+        userId: userId,
+        movieId: bookingData.movie.id,
+        showId: bookingData.showId,
+        seats: bookingData.seats,
+        seatTypes: bookingData.seats.map(() => "standard"),
+        totalPrice: bookingData.totalPrice,
+        showDate: bookingData.date,
+        showTime: bookingData.time,
+      };
+
+      console.log("Booking payload:", payload);
+
+      const res = await axios.post(`${API_BASE_URL}/bookings/`, payload);
+
+      console.log("Booking created:", res.data);
+
+      if (res.data.success) {
+        toast.success("Booking created successfully!");
+        await fetchBookings(userId);
+      }
+    } catch (error) {
+      console.error("Error creating booking:", error);
+      toast.error(error.response?.data?.message || "Failed to create booking");
+    } finally {
+      setCreatingBooking(false);
+    }
+  };
 
   const fetchBookings = async (userId) => {
     try {
       setLoading(true);
+      console.log("Fetching bookings for user:", userId);
       const res = await axios.get(`${API_BASE_URL}/bookings/user/${userId}`, {
         timeout: 10000,
       });
 
+      console.log("Bookings response:", res.data);
       const bookingsData = res.data.data || [];
 
       const formattedBookings = bookingsData.map((booking) => ({
         id: booking._id,
-        movieTitle: booking.movie?.title || "Unknown Movie",
-        moviePoster: booking.movie?.poster_path || "/default-poster.jpg",
-        theater: booking.theater || "Theater Name Not Available",
-        date: booking.date,
-        time: booking.time,
+        movieTitle: booking.movieDetails?.title || "Unknown Movie",
+        moviePoster: booking.movieDetails?.poster_path || "/default-poster.jpg",
+        theater: booking.theater
+          ? `${booking.theater.name}, ${booking.theater.city}`
+          : "Theater Not Available",
+        date: booking.showDate,
+        time: booking.showTime,
         seats: booking.seats || [],
         totalPrice: `$${booking.totalPrice?.toFixed(2) || "0.00"}`,
-        status: booking.status || "pending",
+        status: booking.bookingStatus || "confirmed",
+        paymentStatus: booking.paymentStatus || "pending",
         bookingDate: booking.createdAt,
         ticketFormat: "E-Ticket",
       }));
@@ -63,14 +104,25 @@ const Bookings = () => {
   };
 
   useEffect(() => {
-    if (user?.id) {
-      fetchBookings(user.id);
+    const initializeBookings = async () => {
+      if (!userId) {
+        setLoading(false);
+        setHasAttemptedLoad(true);
+        return;
+      }
+
+      if (location.state && !hasAttemptedLoad) {
+        console.log("Location state:", location.state);
+        await createBooking(location.state);
+        window.history.replaceState({}, document.title);
+      } else {
+        await fetchBookings(userId);
+      }
       setHasAttemptedLoad(true);
-    } else if (!user && !hasAttemptedLoad) {
-      setLoading(false);
-      setHasAttemptedLoad(true);
-    }
-  }, [user]);
+    };
+
+    initializeBookings();
+  }, [userId, location.state]);
 
   const getFilteredBookings = () => {
     if (filter === "all") return bookings;
@@ -111,9 +163,8 @@ const Bookings = () => {
 
   const handleCancelBooking = async (bookingId) => {
     try {
-      await axios.put(`${API_BASE_URL}/bookings/${bookingId}`, {
-        status: "cancelled",
-      });
+      console.log("Cancelling booking:", bookingId);
+      await axios.delete(`${API_BASE_URL}/bookings/${bookingId}`);
       toast.success("Booking cancelled successfully!");
       setBookings(
         bookings.map((b) =>
@@ -122,28 +173,33 @@ const Bookings = () => {
       );
     } catch (error) {
       console.error("Error cancelling booking:", error);
-      toast.error("Failed to cancel booking");
+      toast.error(error.response?.data?.message || "Failed to cancel booking");
     }
   };
 
   const handlePayment = async (bookingId, totalPrice) => {
     try {
       toast.success(`Processing payment of ${totalPrice}...`);
-      const res = await axios.put(`${API_BASE_URL}/bookings/${bookingId}`, {
-        status: "confirmed",
-        paymentStatus: "paid",
-      });
+      const res = await axios.put(
+        `${API_BASE_URL}/bookings/${bookingId}/payment`,
+        {
+          paymentStatus: "completed",
+          paymentId: `PAY_${Date.now()}`,
+        }
+      );
       if (res.data.success) {
         setBookings(
           bookings.map((b) =>
-            b.id === bookingId ? { ...b, status: "confirmed" } : b
+            b.id === bookingId ? { ...b, paymentStatus: "completed" } : b
           )
         );
         toast.success("Payment successful! Booking confirmed.");
       }
     } catch (error) {
       console.error("Error processing payment:", error);
-      toast.error("Payment failed. Please try again.");
+      toast.error(
+        error.response?.data?.message || "Payment failed. Please try again."
+      );
     }
   };
 
@@ -173,18 +229,22 @@ const Bookings = () => {
 
   const filteredBookings = getFilteredBookings();
 
-  if (loading) {
+  if (loading || creatingBooking) {
     return (
       <div className="min-h-screen bg-black pt-20 pb-16 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-white text-lg">Loading your bookings...</p>
+          <p className="text-white text-lg">
+            {creatingBooking
+              ? "Creating your booking..."
+              : "Loading your bookings..."}
+          </p>
         </div>
       </div>
     );
   }
 
-  if (!user) {
+  if (!userId && hasAttemptedLoad) {
     return (
       <div className="min-h-screen bg-black pt-20 pb-16 flex items-center justify-center">
         <div className="text-center">
@@ -215,7 +275,7 @@ const Bookings = () => {
         </div>
 
         <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-6 border-b border-neutral-700 pb-3">
-          {["all", "upcoming", "completed", "cancelled"].map((tab) => (
+          {["all", "confirmed", "completed", "cancelled"].map((tab) => (
             <button
               key={tab}
               onClick={() => setFilter(tab)}
@@ -225,8 +285,8 @@ const Bookings = () => {
                   : "bg-neutral-800 text-gray-400 hover:bg-neutral-700"
               }`}
             >
-              {tab === "upcoming"
-                ? "Upcoming"
+              {tab === "confirmed"
+                ? "Confirmed"
                 : tab === "completed"
                 ? "Completed"
                 : tab === "cancelled"
@@ -377,17 +437,21 @@ const Bookings = () => {
                         }
                         disabled={
                           booking.status === "cancelled" ||
-                          booking.status === "confirmed"
+                          booking.paymentStatus === "completed"
                         }
                         className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm ${
                           booking.status === "cancelled" ||
-                          booking.status === "confirmed"
+                          booking.paymentStatus === "completed"
                             ? "bg-neutral-700 text-gray-500 cursor-not-allowed opacity-50"
                             : "bg-orange-600 hover:bg-orange-700 text-white active:scale-95"
                         }`}
                       >
                         <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <span className="hidden sm:inline">Pay</span>
+                        <span className="hidden sm:inline">
+                          {booking.paymentStatus === "completed"
+                            ? "Paid"
+                            : "Pay"}
+                        </span>
                       </button>
 
                       <button
