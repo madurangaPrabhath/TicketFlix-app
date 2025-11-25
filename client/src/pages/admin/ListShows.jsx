@@ -5,7 +5,7 @@ import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 
 const ListShows = () => {
-  const { fetchNowPlayingShows, updateShow, deleteShow } = useAppContext();
+  const { fetchAdminShows, updateShow, deleteShow } = useAppContext();
   const [shows, setShows] = React.useState([]);
   const [filteredShows, setFilteredShows] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -14,21 +14,27 @@ const ListShows = () => {
   const [editingId, setEditingId] = React.useState(null);
   const [editingShow, setEditingShow] = React.useState(null);
 
-  const formatDateTime = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const formatDateTime = (dateStr, timeStr) => {
+    try {
+      if (!dateStr) return "N/A";
+      const date = new Date(dateStr);
+      const dateString = date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+      return timeStr ? `${dateString} at ${timeStr}` : dateString;
+    } catch (error) {
+      return "N/A";
+    }
   };
 
   const getAllShows = async () => {
     try {
       setIsLoading(true);
-      const allShows = await fetchNowPlayingShows();
+      console.log("Fetching admin shows...");
+      const allShows = await fetchAdminShows();
+      console.log("Fetched shows:", allShows);
       setShows(allShows || []);
       setFilteredShows(allShows || []);
     } catch (error) {
@@ -40,22 +46,33 @@ const ListShows = () => {
   };
 
   React.useEffect(() => {
-    const filtered = shows.filter((show) =>
-      show.movie.title.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filtered = shows.filter((show) => {
+      const movieTitle = show.movieId?.title || show.movie?.title || "";
+      const theaterName = show.theater?.name || "";
+      const city = show.theater?.city || "";
+      const searchLower = searchTerm.toLowerCase();
+
+      return (
+        movieTitle.toLowerCase().includes(searchLower) ||
+        theaterName.toLowerCase().includes(searchLower) ||
+        city.toLowerCase().includes(searchLower)
+      );
+    });
     setFilteredShows(filtered);
   }, [searchTerm, shows]);
 
   const handleDelete = async (id) => {
     try {
       setIsLoading(true);
+      console.log("Deleting show:", id);
       await deleteShow(id);
       setShows(shows.filter((show) => show._id !== id));
+      setFilteredShows(filteredShows.filter((show) => show._id !== id));
       setDeleteConfirm(null);
       toast.success("Show deleted successfully");
     } catch (error) {
       console.error("Error deleting show:", error);
-      toast.error("Failed to delete show");
+      toast.error(error.response?.data?.message || "Failed to delete show");
     } finally {
       setIsLoading(false);
     }
@@ -72,15 +89,32 @@ const ListShows = () => {
         toast.error("Please fill in all required fields");
         return;
       }
+
       setIsLoading(true);
-      await updateShow(editingId, editingShow);
-      setShows(shows.map((s) => (s._id === editingId ? editingShow : s)));
+      console.log("Updating show:", editingId, editingShow);
+
+      // Prepare update data
+      const updateData = {
+        showDate: editingShow.showDate,
+        showTime: editingShow.showTime,
+        theater: editingShow.theater,
+        language: editingShow.language,
+        format: editingShow.format,
+        pricing: editingShow.pricing,
+        status: editingShow.status || "active",
+      };
+
+      await updateShow(editingId, updateData);
+
+      // Refresh the shows list
+      await getAllShows();
+
       setEditingId(null);
       setEditingShow(null);
       toast.success("Show updated successfully");
     } catch (error) {
       console.error("Error updating show:", error);
-      toast.error("Failed to update show");
+      toast.error(error.response?.data?.message || "Failed to update show");
     } finally {
       setIsLoading(false);
     }
@@ -142,39 +176,47 @@ const ListShows = () => {
             {filteredShows.length > 0 ? (
               filteredShows.map((show, index) => (
                 <tr
-                  key={index}
+                  key={show._id || index}
                   className="border-b border-neutral-700 hover:bg-neutral-800/50 transition"
                 >
                   <td className="p-2 md:p-3 lg:p-4 flex items-center gap-1 md:gap-2 lg:gap-3">
                     <img
-                      src={show.movie.poster_path}
-                      alt={show.movie.title}
+                      src={show.movieId?.poster_path || show.movie?.poster_path}
+                      alt={show.movieId?.title || show.movie?.title}
                       className="w-6 h-8 sm:w-8 sm:h-12 md:w-12 md:h-16 rounded object-cover flex-shrink-0"
                       onError={(e) =>
                         (e.target.src =
                           "https://via.placeholder.com/48x64?text=No+Image")
                       }
                     />
-                    <span className="text-white font-medium truncate text-xs sm:text-sm line-clamp-2 md:line-clamp-1">
-                      {show.movie.title}
-                    </span>
+                    <div className="min-w-0">
+                      <span className="text-white font-medium block truncate text-xs sm:text-sm">
+                        {show.movieId?.title || show.movie?.title || "Unknown"}
+                      </span>
+                      <span className="text-gray-500 text-xs block truncate sm:hidden">
+                        {formatDateTime(show.showDate, show.showTime)}
+                      </span>
+                    </div>
                   </td>
                   <td className="p-2 md:p-3 lg:p-4 text-gray-300 hidden sm:table-cell text-xs sm:text-sm">
-                    {formatDateTime(show.showDateTime)}
+                    {formatDateTime(show.showDate, show.showTime)}
                   </td>
                   <td className="p-2 md:p-3 lg:p-4 text-green-400 font-semibold text-xs sm:text-sm">
-                    ${show.showPrice}
+                    ${show.pricing?.standard || show.showPrice || "N/A"}
                   </td>
                   <td className="p-2 md:p-3 lg:p-4 text-gray-300 hidden md:table-cell">
                     <div className="text-xs sm:text-sm">
-                      {show.seatsBooked}/{show.totalSeats}
+                      {show.seats?.booked?.length || 0}/
+                      {show.seats?.total || 150}
                     </div>
                     <div className="w-12 md:w-16 lg:w-20 bg-neutral-700 h-1.5 md:h-2 rounded mt-1">
                       <div
                         className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded"
                         style={{
                           width: `${
-                            (show.seatsBooked / show.totalSeats) * 100
+                            ((show.seats?.booked?.length || 0) /
+                              (show.seats?.total || 150)) *
+                            100
                           }%`,
                         }}
                       ></div>
