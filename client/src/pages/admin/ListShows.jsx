@@ -93,7 +93,6 @@ const ListShows = () => {
       setIsLoading(true);
       console.log("Updating show:", editingId, editingShow);
 
-      // Prepare update data
       const updateData = {
         showDate: editingShow.showDate,
         showTime: editingShow.showTime,
@@ -106,7 +105,6 @@ const ListShows = () => {
 
       await updateShow(editingId, updateData);
 
-      // Refresh the shows list
       await getAllShows();
 
       setEditingId(null);

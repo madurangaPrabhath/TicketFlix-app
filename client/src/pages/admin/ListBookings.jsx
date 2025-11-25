@@ -5,7 +5,7 @@ import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 
 const ListBookings = () => {
-  const { fetchAllBookings, cancelBooking } = useAppContext();
+  const { fetchAdminBookings, cancelBooking } = useAppContext();
   const [bookings, setBookings] = useState([]);
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -13,21 +13,23 @@ const ListBookings = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  const formatDateTime = (dateStr) => {
+  const formatDateTime = (dateStr, timeStr) => {
+    if (!dateStr) return "N/A";
     const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
+    const dateString = date.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
     });
+    return timeStr ? `${dateString} at ${timeStr}` : dateString;
   };
 
   const getAllBookings = async () => {
     try {
       setIsLoading(true);
-      const allBookings = await fetchAllBookings();
+      console.log("Fetching admin bookings...");
+      const allBookings = await fetchAdminBookings();
+      console.log("Fetched bookings:", allBookings);
       setBookings(allBookings || []);
       setFilteredBookings(allBookings || []);
     } catch (error) {
@@ -40,44 +42,51 @@ const ListBookings = () => {
 
   const handleDelete = async (id) => {
     try {
-      setIsLoading(true);
+      console.log("Deleting booking:", id);
       await cancelBooking(id);
       setBookings(bookings.filter((booking) => booking._id !== id));
+      setFilteredBookings(
+        filteredBookings.filter((booking) => booking._id !== id)
+      );
       setDeleteConfirm(null);
       toast.success("Booking deleted successfully");
     } catch (error) {
       console.error("Error deleting booking:", error);
-      toast.error("Failed to delete booking");
-    } finally {
-      setIsLoading(false);
+      toast.error(error.response?.data?.message || "Failed to delete booking");
     }
   };
 
   const handleDownloadReceipt = (booking) => {
     try {
-      // Create receipt content
+      const movieTitle =
+        booking.movieId?.title ||
+        booking.movieDetails?.title ||
+        "Unknown Movie";
+      const theaterInfo = booking.theater
+        ? `${booking.theater.name}, ${booking.theater.city}`
+        : "Theater info not available";
       const receiptContent = `
 TicketFlix Booking Receipt
 ========================================
 
 Booking ID: ${booking._id}
-User: ${booking.user.name}
-Email: ${booking.user.email}
+User ID: ${booking.userId}
 
-Movie: ${booking.show.movie.title}
-Show Date: ${formatDateTime(booking.show.showDateTime)}
+Movie: ${movieTitle}
+Theater: ${theaterInfo}
+Show Date: ${formatDateTime(booking.showDate, booking.showTime)}
 
-Seats: ${booking.bookedSeats.join(", ")}
-Total Amount: $${booking.amount}
-Payment Status: ${booking.isPaid ? "Paid" : "Unpaid"}
+Seats: ${booking.seats?.join(", ") || "N/A"}
+Total Amount: $${booking.totalPrice}
+Payment Status: ${booking.paymentStatus}
+Booking Status: ${booking.bookingStatus}
 
-Booking Date: ${formatDateTime(booking.createdAt)}
+Booking Date: ${formatDateTime(booking.bookingDate || booking.createdAt)}
 
 ========================================
 Thank you for your booking!
       `.trim();
 
-      // Create blob and download
       const element = document.createElement("a");
       element.setAttribute(
         "href",
@@ -99,19 +108,30 @@ Thank you for your booking!
     let filtered = bookings;
 
     if (filterStatus === "paid") {
-      filtered = filtered.filter((booking) => booking.isPaid);
+      filtered = filtered.filter(
+        (booking) => booking.paymentStatus === "completed"
+      );
     } else if (filterStatus === "unpaid") {
-      filtered = filtered.filter((booking) => !booking.isPaid);
+      filtered = filtered.filter(
+        (booking) => booking.paymentStatus !== "completed"
+      );
     }
 
     if (searchTerm) {
-      filtered = filtered.filter(
-        (booking) =>
-          booking.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          booking.show.movie.title
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())
-      );
+      filtered = filtered.filter((booking) => {
+        const movieTitle =
+          booking.movieId?.title || booking.movieDetails?.title || "";
+        const userId = booking.userId || "";
+        const theaterName = booking.theater?.name || "";
+        const city = booking.theater?.city || "";
+
+        return (
+          userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          movieTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          theaterName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          city.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      });
     }
 
     setFilteredBookings(filtered);
@@ -212,21 +232,23 @@ Thank you for your booking!
             {filteredBookings.length > 0 ? (
               filteredBookings.map((booking, index) => (
                 <tr
-                  key={index}
+                  key={booking._id || index}
                   className="border-b border-neutral-700 hover:bg-neutral-800/50 transition"
                 >
                   <td className="p-2 md:p-3 lg:p-4 text-white font-medium text-xs sm:text-sm truncate">
-                    {booking.user.name}
+                    {booking.userId || "Unknown User"}
                   </td>
                   <td className="p-2 md:p-3 lg:p-4 text-gray-300 hidden sm:table-cell text-xs sm:text-sm truncate max-w-xs md:max-w-sm">
-                    {booking.show.movie.title}
+                    {booking.movieId?.title ||
+                      booking.movieDetails?.title ||
+                      "Unknown Movie"}
                   </td>
                   <td className="p-2 md:p-3 lg:p-4 text-gray-300 hidden md:table-cell text-xs sm:text-sm">
-                    {formatDateTime(booking.show.showDateTime)}
+                    {formatDateTime(booking.showDate, booking.showTime)}
                   </td>
                   <td className="p-2 md:p-3 lg:p-4">
                     <div className="flex flex-wrap gap-0.5 md:gap-1">
-                      {booking.bookedSeats.slice(0, 3).map((seat, idx) => (
+                      {(booking.seats || []).slice(0, 3).map((seat, idx) => (
                         <span
                           key={idx}
                           className="inline-block bg-gradient-to-r from-blue-600 to-blue-500 text-white px-1.5 md:px-2 py-0.5 md:py-1 rounded text-xs md:text-sm font-semibold"
@@ -234,19 +256,19 @@ Thank you for your booking!
                           {seat}
                         </span>
                       ))}
-                      {booking.bookedSeats.length > 3 && (
+                      {(booking.seats || []).length > 3 && (
                         <span className="inline-block text-gray-400 text-xs px-1.5 md:px-2 py-0.5 md:py-1">
-                          +{booking.bookedSeats.length - 3}
+                          +{booking.seats.length - 3}
                         </span>
                       )}
                     </div>
                   </td>
                   <td className="p-2 md:p-3 lg:p-4 text-green-400 font-bold text-xs sm:text-sm">
-                    ${booking.amount}
+                    ${booking.totalPrice || 0}
                   </td>
                   <td className="p-2 md:p-3 lg:p-4 hidden lg:table-cell">
                     <div className="flex items-center gap-1 md:gap-2">
-                      {booking.isPaid ? (
+                      {booking.paymentStatus === "completed" ? (
                         <>
                           <CheckCircle
                             size={16}
@@ -263,7 +285,7 @@ Thank you for your booking!
                             className="text-yellow-500 flex-shrink-0"
                           />
                           <span className="text-yellow-400 font-medium text-xs sm:text-sm">
-                            Unpaid
+                            {booking.paymentStatus || "Pending"}
                           </span>
                         </>
                       )}
@@ -314,13 +336,21 @@ Thank you for your booking!
         <div className="bg-neutral-900 rounded-lg p-4 md:p-6 border border-neutral-700">
           <p className="text-gray-400 text-xs md:text-sm">Paid Bookings</p>
           <p className="text-2xl md:text-3xl font-bold text-green-400 mt-2">
-            {bookings.filter((b) => b.isPaid).length}
+            {bookings.filter((b) => b.paymentStatus === "completed").length}
           </p>
         </div>
         <div className="bg-neutral-900 rounded-lg p-4 md:p-6 border border-neutral-700">
           <p className="text-gray-400 text-xs md:text-sm">Total Revenue</p>
           <p className="text-2xl md:text-3xl font-bold text-yellow-400 mt-2">
-            ${bookings.reduce((sum, b) => sum + (b.isPaid ? b.amount : 0), 0)}
+            $
+            {bookings
+              .reduce(
+                (sum, b) =>
+                  sum +
+                  (b.paymentStatus === "completed" ? b.totalPrice || 0 : 0),
+                0
+              )
+              .toFixed(2)}
           </p>
         </div>
       </div>
