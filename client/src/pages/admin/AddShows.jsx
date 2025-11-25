@@ -150,6 +150,14 @@ const AddShows = () => {
 
         const showData = {
           movieId: movieId,
+          movieDetails: {
+            title: selectedMovie.title,
+            poster_path: selectedMovie.poster_path,
+            backdrop_path: selectedMovie.backdrop_path,
+            overview: selectedMovie.overview,
+            vote_average: selectedMovie.vote_average,
+            release_date: selectedMovie.release_date,
+          },
           theater: {
             name: theater.trim(),
             location: city.trim(),

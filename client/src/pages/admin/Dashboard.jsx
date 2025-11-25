@@ -187,8 +187,11 @@ const Dashboard = () => {
               >
                 <div className="aspect-video bg-neutral-800 flex items-center justify-center overflow-hidden">
                   <img
-                    src={show.movieId?.poster_path || show.movie?.poster_path}
-                    alt={show.movieId?.title || show.movie?.title}
+                    src={
+                      show.movieDetails?.poster_path ||
+                      "https://via.placeholder.com/400x300?text=No+Image"
+                    }
+                    alt={show.movieDetails?.title || "Unknown Movie"}
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                     onError={(e) =>
                       (e.target.src =
@@ -199,9 +202,7 @@ const Dashboard = () => {
 
                 <div className="p-4 md:p-5 space-y-3 flex-1 flex flex-col">
                   <h3 className="text-white font-bold text-sm md:text-base truncate">
-                    {show.movieId?.title ||
-                      show.movie?.title ||
-                      "Unknown Movie"}
+                    {show.movieDetails?.title || "Unknown Movie"}
                   </h3>
 
                   <div className="flex items-center justify-between text-xs md:text-sm">

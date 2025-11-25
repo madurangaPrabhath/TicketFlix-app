@@ -47,7 +47,7 @@ const ListShows = () => {
 
   React.useEffect(() => {
     const filtered = shows.filter((show) => {
-      const movieTitle = show.movieId?.title || show.movie?.title || "";
+      const movieTitle = show.movieDetails?.title || "";
       const theaterName = show.theater?.name || "";
       const city = show.theater?.city || "";
       const searchLower = searchTerm.toLowerCase();
@@ -179,8 +179,11 @@ const ListShows = () => {
                 >
                   <td className="p-2 md:p-3 lg:p-4 flex items-center gap-1 md:gap-2 lg:gap-3">
                     <img
-                      src={show.movieId?.poster_path || show.movie?.poster_path}
-                      alt={show.movieId?.title || show.movie?.title}
+                      src={
+                        show.movieDetails?.poster_path ||
+                        "https://via.placeholder.com/48x64?text=No+Image"
+                      }
+                      alt={show.movieDetails?.title || "Unknown"}
                       className="w-6 h-8 sm:w-8 sm:h-12 md:w-12 md:h-16 rounded object-cover flex-shrink-0"
                       onError={(e) =>
                         (e.target.src =
@@ -189,7 +192,7 @@ const ListShows = () => {
                     />
                     <div className="min-w-0">
                       <span className="text-white font-medium block truncate text-xs sm:text-sm">
-                        {show.movieId?.title || show.movie?.title || "Unknown"}
+                        {show.movieDetails?.title || "Unknown Movie"}
                       </span>
                       <span className="text-gray-500 text-xs block truncate sm:hidden">
                         {formatDateTime(show.showDate, show.showTime)}

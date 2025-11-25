@@ -31,7 +31,7 @@ export const createBooking = async (req, res) => {
       });
     }
 
-    const show = await Show.findById(showId).populate("movieId");
+    const show = await Show.findById(showId);
     if (!show) {
       return res.status(404).json({
         success: false,
@@ -51,7 +51,7 @@ export const createBooking = async (req, res) => {
 
     const booking = new Booking({
       userId,
-      movieId,
+      movieId: Number(movieId),
       showId,
       seats,
       seatTypes,
@@ -61,10 +61,10 @@ export const createBooking = async (req, res) => {
       showDate: showDate || show.showDate,
       showTime: showTime || show.showTime,
       theater: show.theater,
-      movieDetails: {
-        title: show.movieId.title,
-        poster_path: show.movieId.poster_path,
-        duration: show.movieId.runtime,
+      movieDetails: show.movieDetails || {
+        title: "Unknown Movie",
+        poster_path: "",
+        duration: 0,
       },
       specialRequests,
     });
@@ -330,9 +330,7 @@ export const getBookingSummary = async (req, res) => {
   try {
     const { bookingId } = req.params;
 
-    const booking = await Booking.findById(bookingId)
-      .populate("movieId")
-      .populate("showId");
+    const booking = await Booking.findById(bookingId).populate("showId");
 
     if (!booking) {
       return res.status(404).json({

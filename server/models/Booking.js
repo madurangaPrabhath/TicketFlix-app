@@ -8,8 +8,7 @@ const bookingSchema = new mongoose.Schema(
       index: true,
     },
     movieId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Movie",
+      type: Number,
       required: true,
     },
     showId: {

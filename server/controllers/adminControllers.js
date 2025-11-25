@@ -67,6 +67,7 @@ export const createShow = async (req, res) => {
   try {
     const {
       movieId,
+      movieDetails,
       theater,
       showDate,
       showTime,
@@ -84,16 +85,9 @@ export const createShow = async (req, res) => {
       });
     }
 
-    const movie = await Movie.findById(movieId);
-    if (!movie) {
-      return res.status(404).json({
-        success: false,
-        message: "Movie not found",
-      });
-    }
-
     const show = new Show({
-      movieId,
+      movieId: Number(movieId),
+      movieDetails: movieDetails || {},
       theater,
       showDate: new Date(showDate),
       showTime,
@@ -132,11 +126,10 @@ export const getAllShows = async (req, res) => {
 
     let filter = {};
     if (status) filter.status = status;
-    if (movieId) filter.movieId = movieId;
+    if (movieId) filter.movieId = Number(movieId);
     if (city) filter["theater.city"] = city;
 
     const shows = await Show.find(filter)
-      .populate("movieId")
       .skip(skip)
       .limit(parseInt(limit))
       .sort({ showDate: -1 });
@@ -249,10 +242,9 @@ export const getAllBookings = async (req, res) => {
     if (status) filter.bookingStatus = status;
     if (paymentStatus) filter.paymentStatus = paymentStatus;
     if (userId) filter.userId = userId;
-    if (movieId) filter.movieId = movieId;
+    if (movieId) filter.movieId = Number(movieId);
 
     const bookings = await Booking.find(filter)
-      .populate("movieId")
       .populate("showId")
       .skip(skip)
       .limit(parseInt(limit))
