@@ -143,124 +143,122 @@ const Bookings = () => {
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { 
               font-family: 'Arial', sans-serif; 
-              background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              min-height: 100vh;
-              padding: 20px;
+              background: white;
+              padding: 10px;
             }
             .ticket-container {
               background: white;
-              width: 600px;
-              border-radius: 20px;
+              max-width: 700px;
+              margin: 0 auto;
+              border: 2px solid #dc2626;
+              border-radius: 12px;
               overflow: hidden;
-              box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+              page-break-inside: avoid;
             }
             .ticket-header {
               background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
               color: white;
-              padding: 30px;
+              padding: 15px 20px;
               text-align: center;
             }
             .ticket-header h1 {
-              font-size: 28px;
-              margin-bottom: 5px;
+              font-size: 22px;
+              margin-bottom: 3px;
               font-weight: bold;
             }
             .ticket-header p {
-              font-size: 14px;
+              font-size: 11px;
               opacity: 0.9;
             }
             .movie-poster {
               width: 100%;
-              height: 300px;
+              height: 180px;
               object-fit: cover;
-              border-bottom: 4px solid #dc2626;
+              border-bottom: 3px solid #dc2626;
             }
             .ticket-content {
-              padding: 30px;
+              padding: 20px;
             }
             .movie-title {
-              font-size: 32px;
+              font-size: 22px;
               font-weight: bold;
               color: #1a1a1a;
-              margin-bottom: 20px;
+              margin-bottom: 12px;
               text-align: center;
             }
             .ticket-details {
               display: grid;
               grid-template-columns: 1fr 1fr;
-              gap: 20px;
-              margin-bottom: 20px;
+              gap: 12px;
+              margin-bottom: 12px;
             }
             .detail-item {
               background: #f5f5f5;
-              padding: 15px;
-              border-radius: 10px;
-              border-left: 4px solid #dc2626;
+              padding: 10px;
+              border-radius: 8px;
+              border-left: 3px solid #dc2626;
             }
             .detail-label {
-              font-size: 12px;
+              font-size: 10px;
               color: #666;
               text-transform: uppercase;
-              letter-spacing: 1px;
-              margin-bottom: 5px;
+              letter-spacing: 0.5px;
+              margin-bottom: 3px;
             }
             .detail-value {
-              font-size: 18px;
+              font-size: 14px;
               color: #1a1a1a;
               font-weight: 600;
             }
             .seats-section {
               background: #fef2f2;
-              padding: 20px;
-              border-radius: 10px;
-              margin-bottom: 20px;
+              padding: 12px;
+              border-radius: 8px;
+              margin-bottom: 12px;
               border: 2px dashed #dc2626;
             }
             .seats-label {
-              font-size: 14px;
+              font-size: 11px;
               color: #991b1b;
               font-weight: 600;
-              margin-bottom: 10px;
+              margin-bottom: 5px;
             }
             .seats-value {
-              font-size: 24px;
+              font-size: 16px;
               color: #dc2626;
               font-weight: bold;
             }
             .price-section {
               background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
               color: white;
-              padding: 20px;
-              border-radius: 10px;
+              padding: 12px;
+              border-radius: 8px;
               text-align: center;
-              margin-bottom: 20px;
+              margin-bottom: 12px;
             }
             .price-label {
-              font-size: 14px;
+              font-size: 11px;
               opacity: 0.9;
-              margin-bottom: 5px;
+              margin-bottom: 3px;
             }
             .price-value {
-              font-size: 36px;
+              font-size: 24px;
               font-weight: bold;
             }
             .ticket-footer {
               background: #f9fafb;
-              padding: 20px;
+              padding: 12px;
               text-align: center;
               border-top: 2px dashed #e5e7eb;
             }
             .booking-id {
-              font-size: 12px;
+              font-size: 10px;
               color: #666;
-              margin-bottom: 10px;
+              margin-bottom: 8px;
             }
             .barcode {
-              width: 200px;
-              height: 60px;
+              width: 150px;
+              height: 40px;
               background: repeating-linear-gradient(
                 90deg,
                 #000 0px,
@@ -269,17 +267,24 @@ const Bookings = () => {
                 #fff 4px
               );
               margin: 0 auto;
-              border-radius: 5px;
+              border-radius: 4px;
             }
             .terms {
-              font-size: 10px;
+              font-size: 8px;
               color: #999;
-              margin-top: 15px;
-              line-height: 1.5;
+              margin-top: 8px;
+              line-height: 1.4;
             }
             @media print {
-              body { background: white; }
-              .ticket-container { box-shadow: none; }
+              body { 
+                background: white;
+                padding: 0;
+              }
+              .ticket-container { 
+                box-shadow: none;
+                page-break-inside: avoid;
+                max-width: 100%;
+              }
             }
           </style>
         </head>
@@ -335,8 +340,7 @@ const Bookings = () => {
               <div class="booking-id">Booking ID: ${booking.id}</div>
               <div class="barcode"></div>
               <div class="terms">
-                Please arrive 15 minutes before showtime. No refunds after showtime. 
-                Present this ticket at the entrance. Enjoy your movie!
+                Please arrive 15 minutes before showtime. Present this ticket at the entrance. Enjoy your movie!
               </div>
             </div>
           </div>
@@ -440,8 +444,6 @@ const Bookings = () => {
     switch (status) {
       case "confirmed":
         return "bg-green-600/20 border-green-600 text-green-400";
-      case "completed":
-        return "bg-blue-600/20 border-blue-600 text-blue-400";
       case "cancelled":
         return "bg-red-600/20 border-red-600 text-red-400";
       default:
@@ -504,7 +506,7 @@ const Bookings = () => {
         </div>
 
         <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-6 border-b border-neutral-700 pb-3">
-          {["all", "confirmed", "completed", "cancelled"].map((tab) => (
+          {["all", "confirmed", "cancelled"].map((tab) => (
             <button
               key={tab}
               onClick={() => setFilter(tab)}
@@ -516,8 +518,6 @@ const Bookings = () => {
             >
               {tab === "confirmed"
                 ? "Confirmed"
-                : tab === "completed"
-                ? "Completed"
                 : tab === "cancelled"
                 ? "Cancelled"
                 : "All"}
@@ -660,7 +660,8 @@ const Bookings = () => {
                         <span className="hidden sm:inline">Share</span>
                       </button>
 
-                      {booking.status === "confirmed" && (
+                      {(booking.status === "confirmed" ||
+                        booking.status === "cancelled") && (
                         <button
                           onClick={() =>
                             handleCancelBooking(booking.id, booking)
@@ -668,11 +669,7 @@ const Bookings = () => {
                           className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/50 active:scale-95"
                         >
                           <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          <span className="hidden sm:inline">
-                            {booking.paymentStatus === "completed"
-                              ? "Refund"
-                              : "Cancel"}
-                          </span>
+                          <span className="hidden sm:inline">Cancel</span>
                         </button>
                       )}
 
