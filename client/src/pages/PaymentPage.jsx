@@ -158,7 +158,6 @@ const PaymentPage = () => {
       return;
     }
 
-    // Validate booking data
     const { movie, showId, seats, totalPrice, date, time } = location.state;
     if (
       !movie?.id ||
@@ -233,9 +232,13 @@ const PaymentPage = () => {
     console.log("Payment succeeded:", paymentIntent);
     setPaymentSuccess(true);
 
+    toast.success("Payment successful! Booking confirmed.", {
+      duration: 4000,
+    });
+
     setTimeout(() => {
-      navigate("/bookings", { replace: true });
-    }, 2000);
+      navigate("/booking", { replace: true });
+    }, 2500);
   };
 
   const handleCancel = async () => {
