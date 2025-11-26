@@ -158,6 +158,21 @@ const PaymentPage = () => {
       return;
     }
 
+    // Validate booking data
+    const { movie, showId, seats, totalPrice, date, time } = location.state;
+    if (
+      !movie?.id ||
+      !showId ||
+      !seats?.length ||
+      !totalPrice ||
+      !date ||
+      !time
+    ) {
+      toast.error("Incomplete booking information");
+      navigate(-1);
+      return;
+    }
+
     initializePayment();
   }, [location.state, userId]);
 
@@ -168,24 +183,30 @@ const PaymentPage = () => {
       const bookingInfo = location.state;
       console.log("Booking info:", bookingInfo);
 
+      const payload = {
+        userId,
+        movieId: bookingInfo.movie.id,
+        showId: bookingInfo.showId,
+        seats: bookingInfo.seats,
+        seatTypes: bookingInfo.seats.map(() => "standard"),
+        totalPrice: bookingInfo.totalPrice,
+        showDate: bookingInfo.date,
+        showTime: bookingInfo.time,
+        movieDetails: {
+          title: bookingInfo.movie.title,
+          poster_path: bookingInfo.movie.poster_path,
+          backdrop_path: bookingInfo.movie.backdrop_path,
+        },
+      };
+
+      console.log("Payment payload:", payload);
+
       const res = await axios.post(
         `${API_BASE_URL}/payments/create-payment-intent`,
-        {
-          userId,
-          movieId: bookingInfo.movie.id,
-          showId: bookingInfo.showId,
-          seats: bookingInfo.seats,
-          seatTypes: bookingInfo.seats.map(() => "standard"),
-          totalPrice: bookingInfo.totalPrice,
-          showDate: bookingInfo.date,
-          showTime: bookingInfo.time,
-          movieDetails: {
-            title: bookingInfo.movie.title,
-            poster_path: bookingInfo.movie.poster_path,
-            backdrop_path: bookingInfo.movie.backdrop_path,
-          },
-        }
+        payload
       );
+
+      console.log("Payment response:", res.data);
 
       if (res.data.success) {
         setClientSecret(res.data.clientSecret);
@@ -200,8 +221,9 @@ const PaymentPage = () => {
       }
     } catch (error) {
       console.error("Error initializing payment:", error);
+      console.error("Error response:", error.response?.data);
       toast.error(
-        error.response?.data?.message || "Failed to initialize payment"
+        error.response?.data?.message || "Error creating payment intent"
       );
       navigate(-1);
     }
@@ -320,7 +342,9 @@ const PaymentPage = () => {
                     <div>
                       <p className="text-gray-400 text-sm">Theater</p>
                       <p className="text-white font-medium">
-                        {bookingData?.theater}
+                        {typeof bookingData?.theater === "object"
+                          ? `${bookingData.theater.name}, ${bookingData.theater.city}`
+                          : bookingData?.theater || "Theater Information"}
                       </p>
                     </div>
                   </div>

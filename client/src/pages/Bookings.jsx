@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import {
   Calendar,
@@ -19,13 +19,11 @@ import axios from "axios";
 
 const Bookings = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { userId } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
-  const [creatingBooking, setCreatingBooking] = useState(false);
 
   const API_BASE_URL = "http://localhost:3000/api";
 
@@ -76,11 +74,14 @@ const Bookings = () => {
 
       const formattedBookings = bookingsData.map((booking) => ({
         id: booking._id,
+        movieId: booking.movieId,
+        showId: booking.showId,
         movieTitle: booking.movieDetails?.title || "Unknown Movie",
         moviePoster: booking.movieDetails?.poster_path || "/default-poster.jpg",
         theater: booking.theater
           ? `${booking.theater.name}, ${booking.theater.city}`
           : "Theater Not Available",
+        theaterObject: booking.theater,
         date: booking.showDate,
         time: booking.showTime,
         seats: booking.seats || [],
@@ -111,18 +112,13 @@ const Bookings = () => {
         return;
       }
 
-      if (location.state && !hasAttemptedLoad) {
-        console.log("Location state:", location.state);
-        await createBooking(location.state);
-        window.history.replaceState({}, document.title);
-      } else {
-        await fetchBookings(userId);
-      }
+      // Simply fetch bookings - payment is handled in PaymentPage now
+      await fetchBookings(userId);
       setHasAttemptedLoad(true);
     };
 
     initializeBookings();
-  }, [userId, location.state]);
+  }, [userId]);
 
   const getFilteredBookings = () => {
     if (filter === "all") return bookings;
@@ -211,7 +207,10 @@ const Bookings = () => {
           time: booking.time,
           seats: booking.seats,
           totalPrice: parseFloat(booking.totalPrice.replace("$", "")),
-          theater: booking.theater,
+          theater: booking.theaterObject || {
+            name: booking.theater.split(",")[0] || "Theater",
+            city: booking.theater.split(",")[1]?.trim() || "City",
+          },
         },
       });
     } catch (error) {
@@ -246,16 +245,12 @@ const Bookings = () => {
 
   const filteredBookings = getFilteredBookings();
 
-  if (loading || creatingBooking) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-black pt-20 pb-16 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-white text-lg">
-            {creatingBooking
-              ? "Creating your booking..."
-              : "Loading your bookings..."}
-          </p>
+          <p className="text-white text-lg">Loading your bookings...</p>
         </div>
       </div>
     );
