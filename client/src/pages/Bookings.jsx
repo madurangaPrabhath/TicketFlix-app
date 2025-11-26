@@ -8,11 +8,9 @@ import {
   Ticket,
   Download,
   Share2,
-  ArrowRight,
   CheckCircle,
   AlertCircle,
-  Printer,
-  CreditCard,
+  Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
@@ -112,7 +110,6 @@ const Bookings = () => {
         return;
       }
 
-      // Simply fetch bookings - payment is handled in PaymentPage now
       await fetchBookings(userId);
       setHasAttemptedLoad(true);
     };
@@ -135,26 +132,250 @@ const Bookings = () => {
     });
   };
 
-  const handleDownloadTicket = (bookingId) => {
-    toast.success("Ticket downloaded successfully!");
+  const handleDownloadTicket = (booking) => {
+    const ticketHTML = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Movie Ticket - ${booking.movieTitle}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+              font-family: 'Arial', sans-serif; 
+              background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              padding: 20px;
+            }
+            .ticket-container {
+              background: white;
+              width: 600px;
+              border-radius: 20px;
+              overflow: hidden;
+              box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            }
+            .ticket-header {
+              background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+              color: white;
+              padding: 30px;
+              text-align: center;
+            }
+            .ticket-header h1 {
+              font-size: 28px;
+              margin-bottom: 5px;
+              font-weight: bold;
+            }
+            .ticket-header p {
+              font-size: 14px;
+              opacity: 0.9;
+            }
+            .movie-poster {
+              width: 100%;
+              height: 300px;
+              object-fit: cover;
+              border-bottom: 4px solid #dc2626;
+            }
+            .ticket-content {
+              padding: 30px;
+            }
+            .movie-title {
+              font-size: 32px;
+              font-weight: bold;
+              color: #1a1a1a;
+              margin-bottom: 20px;
+              text-align: center;
+            }
+            .ticket-details {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 20px;
+              margin-bottom: 20px;
+            }
+            .detail-item {
+              background: #f5f5f5;
+              padding: 15px;
+              border-radius: 10px;
+              border-left: 4px solid #dc2626;
+            }
+            .detail-label {
+              font-size: 12px;
+              color: #666;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              margin-bottom: 5px;
+            }
+            .detail-value {
+              font-size: 18px;
+              color: #1a1a1a;
+              font-weight: 600;
+            }
+            .seats-section {
+              background: #fef2f2;
+              padding: 20px;
+              border-radius: 10px;
+              margin-bottom: 20px;
+              border: 2px dashed #dc2626;
+            }
+            .seats-label {
+              font-size: 14px;
+              color: #991b1b;
+              font-weight: 600;
+              margin-bottom: 10px;
+            }
+            .seats-value {
+              font-size: 24px;
+              color: #dc2626;
+              font-weight: bold;
+            }
+            .price-section {
+              background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+              color: white;
+              padding: 20px;
+              border-radius: 10px;
+              text-align: center;
+              margin-bottom: 20px;
+            }
+            .price-label {
+              font-size: 14px;
+              opacity: 0.9;
+              margin-bottom: 5px;
+            }
+            .price-value {
+              font-size: 36px;
+              font-weight: bold;
+            }
+            .ticket-footer {
+              background: #f9fafb;
+              padding: 20px;
+              text-align: center;
+              border-top: 2px dashed #e5e7eb;
+            }
+            .booking-id {
+              font-size: 12px;
+              color: #666;
+              margin-bottom: 10px;
+            }
+            .barcode {
+              width: 200px;
+              height: 60px;
+              background: repeating-linear-gradient(
+                90deg,
+                #000 0px,
+                #000 2px,
+                #fff 2px,
+                #fff 4px
+              );
+              margin: 0 auto;
+              border-radius: 5px;
+            }
+            .terms {
+              font-size: 10px;
+              color: #999;
+              margin-top: 15px;
+              line-height: 1.5;
+            }
+            @media print {
+              body { background: white; }
+              .ticket-container { box-shadow: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="ticket-container">
+            <div class="ticket-header">
+              <h1>🎬 TICKETFLIX</h1>
+              <p>Your Premium Movie Experience</p>
+            </div>
+            
+            ${
+              booking.moviePoster
+                ? `<img src="https://image.tmdb.org/t/p/w500${booking.moviePoster}" alt="${booking.movieTitle}" class="movie-poster">`
+                : ""
+            }
+            
+            <div class="ticket-content">
+              <div class="movie-title">${booking.movieTitle}</div>
+              
+              <div class="ticket-details">
+                <div class="detail-item">
+                  <div class="detail-label">Theater</div>
+                  <div class="detail-value">${booking.theater}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Date</div>
+                  <div class="detail-value">${formatDate(booking.date)}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Show Time</div>
+                  <div class="detail-value">${booking.time}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Status</div>
+                  <div class="detail-value" style="color: #16a34a; text-transform: uppercase;">${
+                    booking.status
+                  }</div>
+                </div>
+              </div>
+              
+              <div class="seats-section">
+                <div class="seats-label">YOUR SEATS</div>
+                <div class="seats-value">${booking.seats.join(", ")}</div>
+              </div>
+              
+              <div class="price-section">
+                <div class="price-label">Total Amount Paid</div>
+                <div class="price-value">${booking.totalPrice}</div>
+              </div>
+            </div>
+            
+            <div class="ticket-footer">
+              <div class="booking-id">Booking ID: ${booking.id}</div>
+              <div class="barcode"></div>
+              <div class="terms">
+                Please arrive 15 minutes before showtime. No refunds after showtime. 
+                Present this ticket at the entrance. Enjoy your movie!
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open("", "_blank");
+    printWindow.document.write(ticketHTML);
+    printWindow.document.close();
+
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.print();
+        toast.success("Ticket ready for download!");
+      }, 250);
+    };
   };
 
-  const handleShareTicket = (bookingId) => {
+  const handleShareTicket = (booking) => {
+    const shareText = `🎬 ${booking.movieTitle}\n📅 ${formatDate(
+      booking.date
+    )} at ${booking.time}\n🎭 ${
+      booking.theater
+    }\n💺 Seats: ${booking.seats.join(", ")}\n💵 ${booking.totalPrice}`;
+
     if (navigator.share) {
-      navigator.share({
-        title: "My Movie Ticket",
-        text: "Check out my movie ticket!",
-        url: window.location.href,
-      });
+      navigator
+        .share({
+          title: `Movie Ticket - ${booking.movieTitle}`,
+          text: shareText,
+        })
+        .then(() => toast.success("Ticket shared successfully!"))
+        .catch(() => {});
     } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success("Booking link copied to clipboard!");
+      navigator.clipboard.writeText(shareText).then(() => {
+        toast.success("Ticket details copied to clipboard!");
+      });
     }
-  };
-
-  const handlePrintTicket = (bookingId) => {
-    toast.success("Opening print dialog...");
-    window.print();
   };
 
   const handleCancelBooking = async (bookingId, booking) => {
@@ -193,29 +414,25 @@ const Bookings = () => {
     }
   };
 
-  const handlePayment = async (booking) => {
+  const handleDeleteBooking = async (bookingId) => {
     try {
-      navigate("/payment", {
-        state: {
-          movie: {
-            id: booking.movieId,
-            title: booking.movieTitle,
-            poster_path: booking.moviePoster,
-          },
-          showId: booking.showId,
-          date: booking.date,
-          time: booking.time,
-          seats: booking.seats,
-          totalPrice: parseFloat(booking.totalPrice.replace("$", "")),
-          theater: booking.theaterObject || {
-            name: booking.theater.split(",")[0] || "Theater",
-            city: booking.theater.split(",")[1]?.trim() || "City",
-          },
-        },
-      });
+      const confirmDelete = window.confirm(
+        "Are you sure you want to permanently delete this booking? This action cannot be undone."
+      );
+
+      if (!confirmDelete) {
+        return;
+      }
+
+      console.log("Deleting booking:", bookingId);
+      await axios.delete(`${API_BASE_URL}/bookings/${bookingId}`);
+
+      toast.success("Booking deleted successfully!");
+
+      setBookings(bookings.filter((b) => b.id !== bookingId));
     } catch (error) {
-      console.error("Error navigating to payment:", error);
-      toast.error("Failed to proceed to payment");
+      console.error("Error deleting booking:", error);
+      toast.error(error.response?.data?.message || "Failed to delete booking");
     }
   };
 
@@ -418,7 +635,7 @@ const Bookings = () => {
 
                     <div className="flex flex-wrap gap-2 sm:gap-3 mt-4 sm:mt-6 pt-4 border-t border-neutral-700">
                       <button
-                        onClick={() => handleDownloadTicket(booking.id)}
+                        onClick={() => handleDownloadTicket(booking)}
                         disabled={booking.status === "cancelled"}
                         className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm ${
                           booking.status === "cancelled"
@@ -431,41 +648,7 @@ const Bookings = () => {
                       </button>
 
                       <button
-                        onClick={() => handlePrintTicket(booking.id)}
-                        disabled={booking.status === "cancelled"}
-                        className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm ${
-                          booking.status === "cancelled"
-                            ? "bg-neutral-700 text-gray-500 cursor-not-allowed opacity-50"
-                            : "bg-purple-600 hover:bg-purple-700 text-white active:scale-95"
-                        }`}
-                      >
-                        <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <span className="hidden sm:inline">Print</span>
-                      </button>
-
-                      <button
-                        onClick={() => handlePayment(booking)}
-                        disabled={
-                          booking.status === "cancelled" ||
-                          booking.paymentStatus === "completed"
-                        }
-                        className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm ${
-                          booking.status === "cancelled" ||
-                          booking.paymentStatus === "completed"
-                            ? "bg-neutral-700 text-gray-500 cursor-not-allowed opacity-50"
-                            : "bg-orange-600 hover:bg-orange-700 text-white active:scale-95"
-                        }`}
-                      >
-                        <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <span className="hidden sm:inline">
-                          {booking.paymentStatus === "completed"
-                            ? "Paid"
-                            : "Pay Now"}
-                        </span>
-                      </button>
-
-                      <button
-                        onClick={() => handleShareTicket(booking.id)}
+                        onClick={() => handleShareTicket(booking)}
                         disabled={booking.status === "cancelled"}
                         className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm ${
                           booking.status === "cancelled"
@@ -494,11 +677,11 @@ const Bookings = () => {
                       )}
 
                       <button
-                        onClick={() => navigate("/movies")}
-                        className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm bg-neutral-700 hover:bg-neutral-600 text-white active:scale-95"
+                        onClick={() => handleDeleteBooking(booking.id)}
+                        className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/50 active:scale-95"
                       >
-                        <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <span className="hidden sm:inline">Book Again</span>
+                        <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">Delete</span>
                       </button>
                     </div>
                   </div>
