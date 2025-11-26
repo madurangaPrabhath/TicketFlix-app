@@ -161,45 +161,62 @@ const Bookings = () => {
     window.print();
   };
 
-  const handleCancelBooking = async (bookingId) => {
+  const handleCancelBooking = async (bookingId, booking) => {
     try {
       console.log("Cancelling booking:", bookingId);
-      await axios.delete(`${API_BASE_URL}/bookings/${bookingId}`);
-      toast.success("Booking cancelled successfully!");
-      setBookings(
-        bookings.map((b) =>
-          b.id === bookingId ? { ...b, status: "cancelled" } : b
-        )
-      );
+
+      if (booking.paymentStatus === "completed") {
+        const confirmRefund = window.confirm(
+          "This booking has been paid. Do you want to request a refund? The amount will be refunded to your original payment method."
+        );
+
+        if (!confirmRefund) {
+          return;
+        }
+
+        await axios.post(`${API_BASE_URL}/payments/refund/${bookingId}`, {
+          reason: "requested_by_customer",
+        });
+
+        toast.success(
+          "Refund processed successfully! Amount will be credited in 5-10 business days."
+        );
+        await fetchBookings(userId);
+      } else {
+        await axios.delete(`${API_BASE_URL}/bookings/${bookingId}`);
+        toast.success("Booking cancelled successfully!");
+        setBookings(
+          bookings.map((b) =>
+            b.id === bookingId ? { ...b, status: "cancelled" } : b
+          )
+        );
+      }
     } catch (error) {
       console.error("Error cancelling booking:", error);
       toast.error(error.response?.data?.message || "Failed to cancel booking");
     }
   };
 
-  const handlePayment = async (bookingId, totalPrice) => {
+  const handlePayment = async (booking) => {
     try {
-      toast.success(`Processing payment of ${totalPrice}...`);
-      const res = await axios.put(
-        `${API_BASE_URL}/bookings/${bookingId}/payment`,
-        {
-          paymentStatus: "completed",
-          paymentId: `PAY_${Date.now()}`,
-        }
-      );
-      if (res.data.success) {
-        setBookings(
-          bookings.map((b) =>
-            b.id === bookingId ? { ...b, paymentStatus: "completed" } : b
-          )
-        );
-        toast.success("Payment successful! Booking confirmed.");
-      }
+      navigate("/payment", {
+        state: {
+          movie: {
+            id: booking.movieId,
+            title: booking.movieTitle,
+            poster_path: booking.moviePoster,
+          },
+          showId: booking.showId,
+          date: booking.date,
+          time: booking.time,
+          seats: booking.seats,
+          totalPrice: parseFloat(booking.totalPrice.replace("$", "")),
+          theater: booking.theater,
+        },
+      });
     } catch (error) {
-      console.error("Error processing payment:", error);
-      toast.error(
-        error.response?.data?.message || "Payment failed. Please try again."
-      );
+      console.error("Error navigating to payment:", error);
+      toast.error("Failed to proceed to payment");
     }
   };
 
@@ -432,9 +449,7 @@ const Bookings = () => {
                       </button>
 
                       <button
-                        onClick={() =>
-                          handlePayment(booking.id, booking.totalPrice)
-                        }
+                        onClick={() => handlePayment(booking)}
                         disabled={
                           booking.status === "cancelled" ||
                           booking.paymentStatus === "completed"
@@ -450,7 +465,7 @@ const Bookings = () => {
                         <span className="hidden sm:inline">
                           {booking.paymentStatus === "completed"
                             ? "Paid"
-                            : "Pay"}
+                            : "Pay Now"}
                         </span>
                       </button>
 
@@ -469,11 +484,17 @@ const Bookings = () => {
 
                       {booking.status === "confirmed" && (
                         <button
-                          onClick={() => handleCancelBooking(booking.id)}
+                          onClick={() =>
+                            handleCancelBooking(booking.id, booking)
+                          }
                           className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/50 active:scale-95"
                         >
                           <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          <span className="hidden sm:inline">Cancel</span>
+                          <span className="hidden sm:inline">
+                            {booking.paymentStatus === "completed"
+                              ? "Refund"
+                              : "Cancel"}
+                          </span>
                         </button>
                       )}
 

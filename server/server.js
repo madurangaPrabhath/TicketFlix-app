@@ -10,6 +10,7 @@ import movieRouter from "./routes/movieRoutes.js";
 import bookingRouter from "./routes/bookingRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 import settingsRouter from "./routes/settingsRoutes.js";
+import paymentRouter from "./routes/paymentRoutes.js";
 
 const app = express();
 const port = 3000;
@@ -27,6 +28,7 @@ app.use("/api/movies", movieRouter);
 app.use("/api/bookings", bookingRouter);
 app.use("/api/users", userRouter);
 app.use("/api/settings", settingsRouter);
+app.use("/api/payments", paymentRouter);
 
 app.listen(port, () =>
   console.log(`Server listening at http://localhost:${port}`)

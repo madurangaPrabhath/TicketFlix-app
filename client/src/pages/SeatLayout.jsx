@@ -500,7 +500,7 @@ const SeatLayout = () => {
                     total: grandTotal,
                   });
 
-                  navigate(`/booking`, {
+                  navigate(`/payment`, {
                     state: {
                       movie: show.movie,
                       show: selectedShow,
