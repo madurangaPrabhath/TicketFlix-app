@@ -241,14 +241,6 @@ export const cancelBooking = async (req, res) => {
       });
     }
 
-    if (!booking.canCancel) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Booking cannot be cancelled. Cancellations allowed only 24 hours before the show.",
-      });
-    }
-
     await booking.cancelBooking();
 
     const show = await Show.findById(booking.showId);

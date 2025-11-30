@@ -107,7 +107,9 @@ bookingSchema.virtual("daysUntilShow").get(function () {
 });
 
 bookingSchema.virtual("canCancel").get(function () {
-  return this.daysUntilShow > 1 && this.bookingStatus === "confirmed";
+  return (
+    this.bookingStatus === "confirmed" || this.bookingStatus === "cancelled"
+  );
 });
 
 bookingSchema.methods.cancelBooking = function () {

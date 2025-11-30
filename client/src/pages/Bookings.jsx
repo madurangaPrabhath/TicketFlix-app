@@ -384,17 +384,17 @@ const Bookings = () => {
 
   const handleCancelBooking = async (bookingId, booking) => {
     try {
-      console.log("Cancelling booking:", bookingId);
+      const confirmDelete = window.confirm(
+        "Are you sure you want to delete this booking? This action cannot be undone."
+      );
+
+      if (!confirmDelete) {
+        return;
+      }
+
+      console.log("Deleting booking:", bookingId);
 
       if (booking.paymentStatus === "completed") {
-        const confirmRefund = window.confirm(
-          "This booking has been paid. Do you want to request a refund? The amount will be refunded to your original payment method."
-        );
-
-        if (!confirmRefund) {
-          return;
-        }
-
         await axios.post(`${API_BASE_URL}/payments/refund/${bookingId}`, {
           reason: "requested_by_customer",
         });
@@ -402,26 +402,21 @@ const Bookings = () => {
         toast.success(
           "Refund processed successfully! Amount will be credited in 5-10 business days."
         );
-        await fetchBookings(userId);
-      } else {
-        await axios.delete(`${API_BASE_URL}/bookings/${bookingId}`);
-        toast.success("Booking cancelled successfully!");
-        setBookings(
-          bookings.map((b) =>
-            b.id === bookingId ? { ...b, status: "cancelled" } : b
-          )
-        );
       }
+
+      await axios.delete(`${API_BASE_URL}/bookings/${bookingId}`);
+      toast.success("Booking deleted successfully!");
+      setBookings(bookings.filter((b) => b.id !== bookingId));
     } catch (error) {
-      console.error("Error cancelling booking:", error);
-      toast.error(error.response?.data?.message || "Failed to cancel booking");
+      console.error("Error deleting booking:", error);
+      toast.error(error.response?.data?.message || "Failed to delete booking");
     }
   };
 
   const handleDeleteBooking = async (bookingId) => {
     try {
       const confirmDelete = window.confirm(
-        "Are you sure you want to permanently delete this booking? This action cannot be undone."
+        "Are you sure you want to delete this booking? This action cannot be undone."
       );
 
       if (!confirmDelete) {
