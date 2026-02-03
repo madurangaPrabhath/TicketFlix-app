@@ -132,9 +132,18 @@ export const confirmPayment = async (req, res) => {
 
     const show = await Show.findById(booking.showId);
     if (show) {
-      show.seats.booked.push(...booking.seats);
-      show.seats.available -= booking.seats.length;
-      await show.save();
+      const seatsToAdd = booking.seats.filter(
+        (seat) => !show.seats.booked.includes(seat),
+      );
+
+      if (seatsToAdd.length > 0) {
+        show.seats.booked.push(...seatsToAdd);
+        show.seats.available = Math.max(
+          0,
+          show.seats.total - show.seats.booked.length,
+        );
+        await show.save();
+      }
     }
 
     res.status(200).json({
@@ -168,7 +177,7 @@ export const cancelPayment = async (req, res) => {
     if (booking.paymentId) {
       try {
         const paymentIntent = await stripe.paymentIntents.retrieve(
-          booking.paymentId
+          booking.paymentId,
         );
 
         if (
@@ -231,7 +240,7 @@ export const refundPayment = async (req, res) => {
     const show = await Show.findById(booking.showId);
     if (show) {
       show.seats.booked = show.seats.booked.filter(
-        (seat) => !booking.seats.includes(seat)
+        (seat) => !booking.seats.includes(seat),
       );
       show.seats.available += booking.seats.length;
       await show.save();

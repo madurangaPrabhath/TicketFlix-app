@@ -30,7 +30,7 @@ export const getDashboardStats = async (req, res) => {
 
     const monthlyRevenue = monthlyBookings.reduce(
       (sum, b) => sum + b.totalPrice,
-      0
+      0,
     );
 
     const activeShows = await Show.countDocuments({
@@ -229,7 +229,7 @@ export const getAllBookings = async (req, res) => {
   try {
     const {
       page = 1,
-      limit = 10,
+      limit = 1000,
       status,
       paymentStatus,
       userId,
@@ -248,7 +248,7 @@ export const getAllBookings = async (req, res) => {
       .populate("showId")
       .skip(skip)
       .limit(parseInt(limit))
-      .sort({ bookingDate: -1 });
+      .sort({ bookingDate: -1, createdAt: -1 });
 
     const total = await Booking.countDocuments(filter);
 
@@ -492,7 +492,7 @@ export const getOccupancyReport = async (req, res) => {
       bookedSeats: show.seats.booked.length,
       availableSeats: show.seats.available,
       occupancyPercentage: Math.round(
-        (show.seats.booked.length / show.seats.total) * 100
+        (show.seats.booked.length / show.seats.total) * 100,
       ),
     }));
 

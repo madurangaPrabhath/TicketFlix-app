@@ -28,6 +28,26 @@ const SeatLayout = () => {
     ["I", "J"],
   ];
 
+  const getSeatCategory = (seatNumber) => {
+    const row = seatNumber.charAt(0);
+    if (["A", "B"].includes(row)) return "vip";
+    if (["C", "D", "E", "F"].includes(row)) return "premium";
+    return "standard";
+  };
+
+  const getSeatPrice = (seatNumber) => {
+    if (!selectedTime) return 0;
+
+    const selectedShow = availableTimes.find(
+      (item) => item.showTime === selectedTime,
+    );
+
+    if (!selectedShow?.pricing) return 0;
+
+    const category = getSeatCategory(seatNumber);
+    return selectedShow.pricing[category] || 0;
+  };
+
   const fetchMovieAndShows = async () => {
     try {
       setLoading(true);
@@ -163,6 +183,7 @@ const SeatLayout = () => {
         const seatNumber = `${row}${index + 1}`;
         const isSelected = selectedSeats.includes(seatNumber);
         const isBooked = bookedSeats.includes(seatNumber);
+        const category = getSeatCategory(seatNumber);
 
         return (
           <button
@@ -176,7 +197,11 @@ const SeatLayout = () => {
                   ? "bg-red-600/50 cursor-not-allowed opacity-50"
                   : isSelected
                     ? "bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg shadow-green-500/50 scale-105"
-                    : "bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 hover:border-green-500 cursor-pointer active:scale-95"
+                    : category === "vip"
+                      ? "bg-gradient-to-br from-purple-900 to-purple-800 hover:from-purple-800 hover:to-purple-700 text-purple-200 border border-purple-700 hover:border-green-500 cursor-pointer active:scale-95"
+                      : category === "premium"
+                        ? "bg-gradient-to-br from-blue-900 to-blue-800 hover:from-blue-800 hover:to-blue-700 text-blue-200 border border-blue-700 hover:border-green-500 cursor-pointer active:scale-95"
+                        : "bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 hover:border-green-500 cursor-pointer active:scale-95"
               }
             `}
           >
@@ -191,10 +216,37 @@ const SeatLayout = () => {
     </div>
   );
 
-  const ticketPrice = 12;
-  const totalPrice = selectedSeats.length * ticketPrice;
-  const convenienceFee = selectedSeats.length * 1.5;
-  const grandTotal = totalPrice + convenienceFee;
+  const calculatePricing = () => {
+    let standardSeats = 0;
+    let premiumSeats = 0;
+    let vipSeats = 0;
+    let subtotal = 0;
+
+    selectedSeats.forEach((seat) => {
+      const category = getSeatCategory(seat);
+      const price = getSeatPrice(seat);
+
+      if (category === "standard") standardSeats++;
+      else if (category === "premium") premiumSeats++;
+      else if (category === "vip") vipSeats++;
+
+      subtotal += price;
+    });
+
+    const convenienceFee = selectedSeats.length * 1.5;
+    const total = subtotal + convenienceFee;
+
+    return {
+      standardSeats,
+      premiumSeats,
+      vipSeats,
+      subtotal,
+      convenienceFee,
+      total,
+    };
+  };
+
+  const pricing = calculatePricing();
 
   if (loading) {
     return (
@@ -333,8 +385,18 @@ const SeatLayout = () => {
                 <div className="flex items-center gap-2">
                   <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gray-800 rounded border border-gray-700"></div>
                   <span className="text-gray-400 text-xs sm:text-sm">
-                    Available
+                    Standard
                   </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-blue-900 to-blue-800 rounded border border-blue-700"></div>
+                  <span className="text-gray-400 text-xs sm:text-sm">
+                    Premium
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-purple-900 to-purple-800 rounded border border-purple-700"></div>
+                  <span className="text-gray-400 text-xs sm:text-sm">VIP</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-5 h-5 sm:w-6 sm:h-6 bg-green-600 rounded"></div>
@@ -445,20 +507,68 @@ const SeatLayout = () => {
               </div>
 
               <div className="space-y-1.5 sm:space-y-2 mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-neutral-700">
-                <div className="flex justify-between text-xs sm:text-sm">
-                  <span className="text-gray-400">
-                    ${ticketPrice.toFixed(2)} × {selectedSeats.length}
-                  </span>
-                  <span className="text-white font-semibold">
-                    ${(selectedSeats.length * ticketPrice).toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-xs sm:text-sm">
-                  <span className="text-gray-400">Convenience Fee</span>
-                  <span className="text-white font-semibold">
-                    ${convenienceFee.toFixed(2)}
-                  </span>
-                </div>
+                {selectedSeats.length > 0 && selectedTime ? (
+                  <>
+                    {pricing.standardSeats > 0 && (
+                      <div className="flex justify-between text-xs sm:text-sm">
+                        <span className="text-gray-400">
+                          Standard × {pricing.standardSeats}
+                        </span>
+                        <span className="text-white font-semibold">
+                          $
+                          {(
+                            pricing.standardSeats *
+                            (availableTimes.find(
+                              (item) => item.showTime === selectedTime,
+                            )?.pricing?.standard || 0)
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    {pricing.premiumSeats > 0 && (
+                      <div className="flex justify-between text-xs sm:text-sm">
+                        <span className="text-gray-400">
+                          Premium × {pricing.premiumSeats}
+                        </span>
+                        <span className="text-white font-semibold">
+                          $
+                          {(
+                            pricing.premiumSeats *
+                            (availableTimes.find(
+                              (item) => item.showTime === selectedTime,
+                            )?.pricing?.premium || 0)
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    {pricing.vipSeats > 0 && (
+                      <div className="flex justify-between text-xs sm:text-sm">
+                        <span className="text-gray-400">
+                          VIP × {pricing.vipSeats}
+                        </span>
+                        <span className="text-white font-semibold">
+                          $
+                          {(
+                            pricing.vipSeats *
+                            (availableTimes.find(
+                              (item) => item.showTime === selectedTime,
+                            )?.pricing?.vip || 0)
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-xs sm:text-sm">
+                      <span className="text-gray-400">Convenience Fee</span>
+                      <span className="text-white font-semibold">
+                        ${pricing.convenienceFee.toFixed(2)}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center text-gray-500 text-xs sm:text-sm py-2">
+                    Select seats to see pricing
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-between mb-4 sm:mb-6 pb-4 sm:pb-6 border-b border-neutral-700">
@@ -466,7 +576,7 @@ const SeatLayout = () => {
                   Total
                 </span>
                 <span className="text-green-400 font-bold text-lg sm:text-xl">
-                  ${grandTotal.toFixed(2)}
+                  ${pricing.total.toFixed(2)}
                 </span>
               </div>
 
@@ -497,7 +607,7 @@ const SeatLayout = () => {
                   console.log("Proceeding to checkout with:", {
                     show: selectedShow,
                     seats: selectedSeats,
-                    total: grandTotal,
+                    total: pricing.total,
                   });
 
                   navigate(`/payment`, {
@@ -507,7 +617,7 @@ const SeatLayout = () => {
                       date: selectedDate,
                       time: selectedTime,
                       seats: selectedSeats,
-                      totalPrice: grandTotal,
+                      totalPrice: pricing.total,
                       showId: selectedShow._id,
                       theater: selectedShow.theater,
                       pricing: selectedShow.pricing,

@@ -46,7 +46,7 @@ const ListBookings = () => {
       await cancelBooking(id);
       setBookings(bookings.filter((booking) => booking._id !== id));
       setFilteredBookings(
-        filteredBookings.filter((booking) => booking._id !== id)
+        filteredBookings.filter((booking) => booking._id !== id),
       );
       setDeleteConfirm(null);
       toast.success("Booking deleted successfully");
@@ -90,7 +90,7 @@ Thank you for your booking!
       const element = document.createElement("a");
       element.setAttribute(
         "href",
-        "data:text/plain;charset=utf-8," + encodeURIComponent(receiptContent)
+        "data:text/plain;charset=utf-8," + encodeURIComponent(receiptContent),
       );
       element.setAttribute("download", `receipt_${booking._id}.txt`);
       element.style.display = "none";
@@ -109,11 +109,11 @@ Thank you for your booking!
 
     if (filterStatus === "paid") {
       filtered = filtered.filter(
-        (booking) => booking.paymentStatus === "completed"
+        (booking) => booking.paymentStatus === "completed",
       );
     } else if (filterStatus === "unpaid") {
       filtered = filtered.filter(
-        (booking) => booking.paymentStatus !== "completed"
+        (booking) => booking.paymentStatus !== "completed",
       );
     }
 
@@ -139,6 +139,23 @@ Thank you for your booking!
 
   useEffect(() => {
     getAllBookings();
+
+    const interval = setInterval(() => {
+      getAllBookings();
+    }, 30000);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        getAllBookings();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   if (isLoading) {
@@ -348,7 +365,7 @@ Thank you for your booking!
                 (sum, b) =>
                   sum +
                   (b.paymentStatus === "completed" ? b.totalPrice || 0 : 0),
-                0
+                0,
               )
               .toFixed(2)}
           </p>
