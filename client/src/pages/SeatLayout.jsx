@@ -175,14 +175,14 @@ const SeatLayout = () => {
                 isBooked
                   ? "bg-red-600/50 cursor-not-allowed opacity-50"
                   : isSelected
-                  ? "bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg shadow-green-500/50 scale-105"
-                  : "bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 hover:border-green-500 cursor-pointer active:scale-95"
+                    ? "bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg shadow-green-500/50 scale-105"
+                    : "bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 hover:border-green-500 cursor-pointer active:scale-95"
               }
             `}
           >
             {isSelected && <Check className="w-3 h-3 sm:w-4 sm:h-4" />}
             {!isSelected && !isBooked && (
-              <span className="text-xs">{index + 1}</span>
+              <span className="text-xs">{seatNumber}</span>
             )}
             {isBooked && <span className="text-xs">×</span>}
           </button>
@@ -486,7 +486,7 @@ const SeatLayout = () => {
                   }
 
                   const selectedShow = availableTimes.find(
-                    (item) => item.showTime === selectedTime
+                    (item) => item.showTime === selectedTime,
                   );
 
                   if (!selectedShow?._id) {
