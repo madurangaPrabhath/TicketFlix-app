@@ -32,22 +32,7 @@ import {
 
 const userRoutes = express.Router();
 
-userRoutes.get("/:userId", getUserProfile);
-userRoutes.put("/:userId", updateUserProfile);
-userRoutes.put("/:userId/preferences", updatePreferences);
-userRoutes.get("/:userId/bookings", getUserBookingHistory);
-userRoutes.get("/:userId/upcoming", getUpcomingBookings);
-userRoutes.get("/:userId/past", getPastBookings);
-userRoutes.get("/favorite/check", isFavorite);
-userRoutes.get("/:userId/favorites", getUserFavorites);
-userRoutes.post("/:userId/favorites", addToFavorites);
-userRoutes.delete("/:userId/favorites/:favoriteId", removeFromFavorites);
-userRoutes.post("/:userId/favorites/sync-clerk", syncFavoritesToClerk);
-userRoutes.get("/:userId/stats", getUserStats);
-userRoutes.get("/:userId/dashboard", getUserDashboard);
-userRoutes.put("/:userId/notifications", updateNotificationSettings);
-
-// Admin routes - accessible to all authenticated users
+// Admin routes - MUST come before /:userId routes to avoid conflicts
 userRoutes.get("/admin/dashboard", getDashboardStats);
 userRoutes.post("/admin/shows", createShow);
 userRoutes.get("/admin/shows", getAllShows);
@@ -59,5 +44,23 @@ userRoutes.get("/admin/users", getAllUsers);
 userRoutes.get("/admin/users/:userId", getUserDetails);
 userRoutes.get("/admin/reports/revenue", getRevenueReport);
 userRoutes.get("/admin/reports/occupancy", getOccupancyReport);
+
+// Static routes before dynamic :userId routes
+userRoutes.get("/favorite/check", isFavorite);
+
+// User routes with dynamic :userId parameter
+userRoutes.get("/:userId", getUserProfile);
+userRoutes.put("/:userId", updateUserProfile);
+userRoutes.put("/:userId/preferences", updatePreferences);
+userRoutes.get("/:userId/bookings", getUserBookingHistory);
+userRoutes.get("/:userId/upcoming", getUpcomingBookings);
+userRoutes.get("/:userId/past", getPastBookings);
+userRoutes.get("/:userId/favorites", getUserFavorites);
+userRoutes.post("/:userId/favorites", addToFavorites);
+userRoutes.delete("/:userId/favorites/:favoriteId", removeFromFavorites);
+userRoutes.post("/:userId/favorites/sync-clerk", syncFavoritesToClerk);
+userRoutes.get("/:userId/stats", getUserStats);
+userRoutes.get("/:userId/dashboard", getUserDashboard);
+userRoutes.put("/:userId/notifications", updateNotificationSettings);
 
 export default userRoutes;
