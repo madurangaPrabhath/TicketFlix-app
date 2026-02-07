@@ -219,16 +219,16 @@ Thank you for your booking!
       </div>
 
       <div className="px-4 md:px-6 lg:px-8 overflow-x-auto bg-neutral-900 rounded-lg">
-        <table className="w-full text-xs sm:text-sm md:text-base">
+        <table className="w-full text-xs sm:text-sm md:text-base min-w-[800px]">
           <thead>
             <tr className="border-b border-neutral-700 bg-neutral-800">
               <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm">
                 User
               </th>
-              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm hidden sm:table-cell">
+              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm">
                 Movie
               </th>
-              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm hidden md:table-cell">
+              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm">
                 Show Date
               </th>
               <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm">
@@ -237,10 +237,10 @@ Thank you for your booking!
               <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm">
                 Amount
               </th>
-              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm hidden lg:table-cell">
+              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm">
                 Status
               </th>
-              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm">
+              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm w-[180px]">
                 Actions
               </th>
             </tr>
@@ -252,15 +252,15 @@ Thank you for your booking!
                   key={booking._id || index}
                   className="border-b border-neutral-700 hover:bg-neutral-800/50 transition"
                 >
-                  <td className="p-2 md:p-3 lg:p-4 text-white font-medium text-xs sm:text-sm truncate">
+                  <td className="p-2 md:p-3 lg:p-4 text-white font-medium text-xs sm:text-sm truncate max-w-[120px]">
                     {booking.userId || "Unknown User"}
                   </td>
-                  <td className="p-2 md:p-3 lg:p-4 text-gray-300 hidden sm:table-cell text-xs sm:text-sm truncate max-w-xs md:max-w-sm">
+                  <td className="p-2 md:p-3 lg:p-4 text-gray-300 text-xs sm:text-sm truncate max-w-[180px]">
                     {booking.movieId?.title ||
                       booking.movieDetails?.title ||
                       "Unknown Movie"}
                   </td>
-                  <td className="p-2 md:p-3 lg:p-4 text-gray-300 hidden md:table-cell text-xs sm:text-sm">
+                  <td className="p-2 md:p-3 lg:p-4 text-gray-300 text-xs sm:text-sm whitespace-nowrap">
                     {formatDateTime(booking.showDate, booking.showTime)}
                   </td>
                   <td className="p-2 md:p-3 lg:p-4">
@@ -280,11 +280,11 @@ Thank you for your booking!
                       )}
                     </div>
                   </td>
-                  <td className="p-2 md:p-3 lg:p-4 text-green-400 font-bold text-xs sm:text-sm">
+                  <td className="p-2 md:p-3 lg:p-4 text-green-400 font-bold text-xs sm:text-sm whitespace-nowrap">
                     ${booking.totalPrice || 0}
                   </td>
-                  <td className="p-2 md:p-3 lg:p-4 hidden lg:table-cell">
-                    <div className="flex items-center gap-1 md:gap-2">
+                  <td className="p-2 md:p-3 lg:p-4">
+                    <div className="flex items-center gap-1 md:gap-2 whitespace-nowrap">
                       {booking.paymentStatus === "completed" ? (
                         <>
                           <CheckCircle
@@ -309,21 +309,22 @@ Thank you for your booking!
                     </div>
                   </td>
                   <td className="p-2 md:p-3 lg:p-4">
-                    <div className="flex gap-1 md:gap-2">
+                    <div className="flex gap-2 whitespace-nowrap">
                       <button
                         onClick={() => handleDownloadReceipt(booking)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-2 md:px-3 py-1 md:py-2 rounded transition flex items-center gap-1 text-xs md:text-sm flex-shrink-0"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded transition flex items-center gap-1.5 text-xs flex-shrink-0"
                         title="Download Receipt"
                       >
-                        <Download size={14} className="md:size-4" />
-                        <span className="hidden lg:inline">Receipt</span>
+                        <Download size={14} />
+                        <span>Receipt</span>
                       </button>
                       <button
                         onClick={() => setDeleteConfirm(booking._id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-2 md:px-3 py-1 md:py-2 rounded transition flex items-center gap-1 text-xs md:text-sm flex-shrink-0"
+                        className="bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded transition flex items-center gap-1.5 text-xs flex-shrink-0"
+                        title="Delete Booking"
                       >
-                        <Trash2 size={14} className="md:size-4" />
-                        <span className="hidden lg:inline">Delete</span>
+                        <Trash2 size={14} />
+                        <span>Delete</span>
                       </button>
                     </div>
                   </td>
