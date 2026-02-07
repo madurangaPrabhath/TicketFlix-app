@@ -18,11 +18,11 @@ const Dashboard = () => {
     totalBookings: 0,
     totalRevenue: 0,
     totalShows: 0,
-    totalUsers: 0,
     totalMovies: 0,
     activeShows: 0,
     completedShows: 0,
     todayBookings: 0,
+    dailyRevenue: 0,
     monthlyRevenue: 0,
     recentShows: [],
   });
@@ -38,13 +38,6 @@ const Dashboard = () => {
       bgColor: "bg-blue-500/20",
     },
     {
-      title: "Monthly Revenue",
-      value: `$${dashboardData.monthlyRevenue?.toFixed(2) || "0.00"}`,
-      icon: DollarSign,
-      color: "text-green-500",
-      bgColor: "bg-green-500/20",
-    },
-    {
       title: "Total Shows",
       value: dashboardData.totalShows || 0,
       icon: Film,
@@ -52,11 +45,18 @@ const Dashboard = () => {
       bgColor: "bg-purple-500/20",
     },
     {
-      title: "Total Users",
-      value: dashboardData.totalUsers || 0,
-      icon: Users,
+      title: "Daily Revenue",
+      value: `$${dashboardData.dailyRevenue?.toFixed(2) || "0.00"}`,
+      icon: TrendingUp,
       color: "text-orange-500",
       bgColor: "bg-orange-500/20",
+    },
+    {
+      title: "Monthly Revenue",
+      value: `$${dashboardData.monthlyRevenue?.toFixed(2) || "0.00"}`,
+      icon: DollarSign,
+      color: "text-green-500",
+      bgColor: "bg-green-500/20",
     },
   ];
 
@@ -75,11 +75,11 @@ const Dashboard = () => {
         totalBookings: stats?.totalBookings || 0,
         totalRevenue: stats?.monthlyRevenue || 0,
         totalShows: stats?.totalShows || 0,
-        totalUsers: stats?.totalUsers || 0,
         totalMovies: stats?.totalMovies || 0,
         activeShows: stats?.activeShows || 0,
         completedShows: stats?.completedShows || 0,
         todayBookings: stats?.todayBookings || 0,
+        dailyRevenue: stats?.dailyRevenue || 0,
         monthlyRevenue: stats?.monthlyRevenue || 0,
         recentShows: (shows || []).slice(0, 6),
       });
