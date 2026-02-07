@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Film, Menu, X, Search, TicketPlus } from "lucide-react";
-import { useClerk, useUser, UserButton } from "@clerk/clerk-react";
+import { useUser, UserButton } from "@clerk/clerk-react";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -12,7 +12,6 @@ const Navbar = () => {
   const searchButtonRef = useRef(null);
 
   const { user, isSignedIn, isLoaded } = useUser();
-  const { openSignIn, signOut } = useClerk();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -61,15 +60,6 @@ const Navbar = () => {
   const handleLinkClick = () => {
     setIsMenuOpen(false);
     window.scrollTo(0, 0);
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      navigate("/");
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
   };
 
   return (
@@ -193,12 +183,20 @@ const Navbar = () => {
               <div className="w-24 h-10 bg-white/10 rounded-full animate-pulse"></div>
             </div>
           ) : !user ? (
-            <button
-              onClick={() => openSignIn()}
-              className="hidden md:inline-block px-4 py-1 sm:px-7 sm:py-2 bg-red-600 hover:bg-red-700 transition rounded-full font-medium cursor-pointer text-white border-none text-sm sm:text-base"
-            >
-              Login
-            </button>
+            <div className="hidden md:flex items-center gap-3">
+              <button
+                onClick={() => navigate("/sign-in")}
+                className="px-5 py-2 bg-transparent hover:bg-white/10 transition rounded-full font-medium cursor-pointer text-white border border-red-600 text-sm"
+              >
+                Login
+              </button>
+              <button
+                onClick={() => navigate("/sign-up")}
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 transition rounded-full font-medium cursor-pointer text-white border-none text-sm"
+              >
+                Sign Up
+              </button>
+            </div>
           ) : (
             <div className="hidden md:block">
               <UserButton afterSignOutUrl="/">
@@ -294,15 +292,26 @@ const Navbar = () => {
             {!isLoaded ? (
               <div className="w-full h-14 bg-white/5 rounded-lg animate-pulse"></div>
             ) : !user ? (
-              <button
-                onClick={() => {
-                  openSignIn();
-                  handleLinkClick();
-                }}
-                className="px-4 py-3.5 sm:px-7 sm:py-3.5 bg-red-600 hover:bg-red-700 transition rounded-full font-medium cursor-pointer text-white border-none text-base text-center w-full"
-              >
-                Login
-              </button>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => {
+                    navigate("/sign-in");
+                    handleLinkClick();
+                  }}
+                  className="px-4 py-3.5 bg-transparent border-2 border-red-600 text-white hover:bg-red-600/10 transition rounded-full font-medium cursor-pointer text-base text-center w-full"
+                >
+                  Login
+                </button>
+                <button
+                  onClick={() => {
+                    navigate("/sign-up");
+                    handleLinkClick();
+                  }}
+                  className="px-4 py-3.5 bg-red-600 hover:bg-red-700 transition rounded-full font-medium cursor-pointer text-white border-none text-base text-center w-full"
+                >
+                  Sign Up
+                </button>
+              </div>
             ) : (
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3 bg-white/5 text-white py-3.5 px-4 rounded-lg">
@@ -332,12 +341,6 @@ const Navbar = () => {
                   <TicketPlus size={20} />
                   <span>My Bookings</span>
                 </Link>
-                <button
-                  className="px-4 py-3.5 bg-transparent border-2 border-neutral-800 text-gray-400 hover:border-red-600 hover:text-red-600 transition rounded-lg font-medium cursor-pointer text-base"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </button>
               </div>
             )}
           </div>

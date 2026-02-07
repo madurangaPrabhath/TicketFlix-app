@@ -10,7 +10,7 @@ import Favorite from "./pages/Favorite";
 import PaymentPage from "./pages/PaymentPage";
 import { Toaster } from "react-hot-toast";
 import Footer from "./components/Footer";
-import { useUser, SignIn } from "@clerk/clerk-react";
+import { useUser, SignIn, SignUp } from "@clerk/clerk-react";
 import Layout from "./pages/admin/Layout";
 import Dashboard from "./pages/admin/Dashboard";
 import AddShows from "./pages/admin/AddShows";
@@ -44,6 +44,42 @@ const App = () => {
         <Route path="/payment" element={<PaymentPage />} />
         <Route path="/booking" element={<Booking />} />
         <Route path="/favorite" element={<Favorite />} />
+        <Route
+          path="/sign-in"
+          element={
+            <div className="min-h-screen bg-black flex items-center justify-center">
+              <SignIn
+                appearance={{
+                  baseTheme: "dark",
+                  elements: {
+                    cardBox: "bg-gray-900 border border-red-600",
+                    formButtonPrimary: "bg-red-600 hover:bg-red-700",
+                  },
+                }}
+                fallbackRedirectUrl="/"
+                signUpUrl="/sign-up"
+              />
+            </div>
+          }
+        />
+        <Route
+          path="/sign-up"
+          element={
+            <div className="min-h-screen bg-black flex items-center justify-center">
+              <SignUp
+                appearance={{
+                  baseTheme: "dark",
+                  elements: {
+                    cardBox: "bg-gray-900 border border-red-600",
+                    formButtonPrimary: "bg-red-600 hover:bg-red-700",
+                  },
+                }}
+                fallbackRedirectUrl="/"
+                signInUrl="/sign-in"
+              />
+            </div>
+          }
+        />
         <Route
           path="/admin/*"
           element={
