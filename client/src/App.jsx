@@ -65,17 +65,59 @@ const App = () => {
         <Route
           path="/sign-up"
           element={
-            <div className="min-h-screen bg-black flex items-center justify-center">
+            <div className="min-h-screen bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
               <SignUp
                 appearance={{
                   baseTheme: "dark",
                   elements: {
-                    cardBox: "bg-gray-900 border border-red-600",
-                    formButtonPrimary: "bg-red-600 hover:bg-red-700",
+                    rootBox: "mx-auto w-full",
+                    card: "bg-gray-900 shadow-2xl",
+                    cardBox:
+                      "bg-gray-900 border-2 border-red-600 rounded-xl shadow-xl",
+                    headerTitle: "text-white text-3xl font-bold",
+                    headerSubtitle: "text-gray-400 text-base mt-2",
+                    socialButtonsBlockButton:
+                      "bg-gray-800 border border-gray-700 hover:border-red-600 hover:bg-gray-750 text-white rounded-lg transition-all",
+                    socialButtonsBlockButtonText: "text-white font-medium",
+                    socialButtonsIconButton:
+                      "border-gray-700 hover:border-red-600",
+                    formButtonPrimary:
+                      "bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-lg transition-all",
+                    formFieldLabel: "text-gray-300 font-semibold text-sm mb-2",
+                    formFieldInput:
+                      "bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:border-red-600 focus:ring-2 focus:ring-red-600 rounded-lg",
+                    footerActionLink:
+                      "text-red-500 hover:text-red-400 font-semibold transition-colors",
+                    footerActionText: "text-gray-400",
+                    identityPreviewText: "text-white",
+                    identityPreviewEditButton:
+                      "text-red-500 hover:text-red-400",
+                    formFieldInputShowPasswordButton:
+                      "text-gray-400 hover:text-red-500",
+                    formResendCodeLink:
+                      "text-red-500 hover:text-red-400 font-medium",
+                    otpCodeFieldInput:
+                      "bg-gray-800 border border-gray-700 text-white focus:border-red-600 focus:ring-2 focus:ring-red-600 rounded-lg",
+                    formFieldErrorText: "text-red-400 text-sm",
+                    formFieldSuccessText: "text-green-400 text-sm",
+                    formFieldWarningText: "text-yellow-400 text-sm",
+                    formFieldHintText: "text-gray-400 text-sm",
+                    formFieldInfoText: "text-gray-400 text-sm",
+                    alertText: "text-white",
+                    dividerLine: "bg-gray-700",
+                    dividerText: "text-gray-500 font-medium",
+                    formHeaderTitle: "text-white text-2xl font-bold",
+                    formHeaderSubtitle: "text-gray-400",
+                  },
+                  layout: {
+                    socialButtonsPlacement: "top",
+                    socialButtonsVariant: "blockButton",
                   },
                 }}
                 fallbackRedirectUrl="/"
                 signInUrl="/sign-in"
+                routing="path"
+                path="/sign-up"
               />
             </div>
           }
