@@ -136,7 +136,7 @@ const Settings = () => {
     let result = null;
 
     if (activeTab === "theme") {
-      result = await updateAdminThemeSettings(form.theme, userId);
+      result = await updateAdminThemeSettings({ mode: form.theme.mode }, userId);
     }
     if (activeTab === "dashboard") {
       result = await updateAdminDashboardSettings(form.dashboard, userId);
@@ -231,27 +231,9 @@ const Settings = () => {
                 <option value="light">Light</option>
               </select>
             </div>
-            <div>
-              <p className="text-sm text-gray-400 mb-2">Primary Color</p>
-              <input
-                type="text"
-                value={form.theme.primaryColor}
-                onChange={(e) =>
-                  updateSection("theme", "primaryColor", e.target.value)
-                }
-                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white"
-              />
-            </div>
-            <div>
-              <p className="text-sm text-gray-400 mb-2">Accent Color</p>
-              <input
-                type="text"
-                value={form.theme.accentColor}
-                onChange={(e) =>
-                  updateSection("theme", "accentColor", e.target.value)
-                }
-                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white"
-              />
+            <div className="md:col-span-2 p-3 rounded-lg bg-neutral-900 border border-neutral-700 text-sm text-gray-400">
+              Theme mode switches full app appearance between dark and light.
+              Brand colors stay unchanged.
             </div>
           </div>
         )}

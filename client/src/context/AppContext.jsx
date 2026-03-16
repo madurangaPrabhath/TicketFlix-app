@@ -25,6 +25,11 @@ export const AppContextProvider = ({ children }) => {
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
 
+  const [themeMode, setThemeMode] = useState(() => {
+    const stored = localStorage.getItem("ticketflix-theme-mode");
+    return stored === "light" || stored === "dark" ? stored : "dark";
+  });
+
   const [movies, setMovies] = useState([]);
   const [shows, setShows] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
@@ -58,6 +63,13 @@ export const AppContextProvider = ({ children }) => {
   useEffect(() => {
     console.log("AppContext initialized with BASE_URL:", BASE_URL);
   }, []);
+
+  useEffect(() => {
+    const mode = themeMode === "light" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", mode);
+    document.documentElement.style.colorScheme = mode;
+    localStorage.setItem("ticketflix-theme-mode", mode);
+  }, [themeMode]);
 
   const handleError = (error, message = "An error occurred") => {
     console.error(message, error);
@@ -885,7 +897,11 @@ export const AppContextProvider = ({ children }) => {
     try {
       if (!targetUserId) return null;
       const response = await axiosInstance.get(`/settings/admin/${targetUserId}`);
-      return response.data?.data || null;
+      const settings = response.data?.data || null;
+      if (settings?.theme?.mode) {
+        setThemeMode(settings.theme.mode === "light" ? "light" : "dark");
+      }
+      return settings;
     } catch (err) {
       handleError(err, "Failed to fetch admin settings");
       return null;
@@ -915,7 +931,11 @@ export const AppContextProvider = ({ children }) => {
         themeData
       );
       handleSuccess("Theme settings updated");
-      return response.data?.data || null;
+      const updatedTheme = response.data?.data || null;
+      if (updatedTheme?.mode) {
+        setThemeMode(updatedTheme.mode === "light" ? "light" : "dark");
+      }
+      return updatedTheme;
     } catch (err) {
       handleError(err, "Failed to update theme settings");
       return null;
@@ -1019,7 +1039,11 @@ export const AppContextProvider = ({ children }) => {
         `/settings/admin/${targetUserId}/reset`
       );
       handleSuccess("Settings reset to defaults");
-      return response.data?.data || null;
+      const nextSettings = response.data?.data || null;
+      if (nextSettings?.theme?.mode) {
+        setThemeMode(nextSettings.theme.mode === "light" ? "light" : "dark");
+      }
+      return nextSettings;
     } catch (err) {
       handleError(err, "Failed to reset settings");
       return null;
@@ -1034,6 +1058,8 @@ export const AppContextProvider = ({ children }) => {
     loading,
     error,
     success,
+    themeMode,
+    setThemeMode,
 
     user,
     userProfile,
