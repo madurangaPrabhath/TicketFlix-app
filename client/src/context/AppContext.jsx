@@ -881,6 +881,151 @@ export const AppContextProvider = ({ children }) => {
     }
   };
 
+  const fetchAdminSettings = async (targetUserId = userId) => {
+    try {
+      if (!targetUserId) return null;
+      const response = await axiosInstance.get(`/settings/admin/${targetUserId}`);
+      return response.data?.data || null;
+    } catch (err) {
+      handleError(err, "Failed to fetch admin settings");
+      return null;
+    }
+  };
+
+  const updateAdminSettings = async (settings, targetUserId = userId) => {
+    try {
+      if (!targetUserId) return null;
+      const response = await axiosInstance.put(
+        `/settings/admin/${targetUserId}`,
+        settings
+      );
+      handleSuccess("Admin settings updated");
+      return response.data?.data || null;
+    } catch (err) {
+      handleError(err, "Failed to update admin settings");
+      return null;
+    }
+  };
+
+  const updateAdminThemeSettings = async (themeData, targetUserId = userId) => {
+    try {
+      if (!targetUserId) return null;
+      const response = await axiosInstance.put(
+        `/settings/admin/${targetUserId}/theme`,
+        themeData
+      );
+      handleSuccess("Theme settings updated");
+      return response.data?.data || null;
+    } catch (err) {
+      handleError(err, "Failed to update theme settings");
+      return null;
+    }
+  };
+
+  const updateAdminDashboardSettings = async (
+    dashboardData,
+    targetUserId = userId
+  ) => {
+    try {
+      if (!targetUserId) return null;
+      const response = await axiosInstance.put(
+        `/settings/admin/${targetUserId}/dashboard`,
+        dashboardData
+      );
+      handleSuccess("Dashboard settings updated");
+      return response.data?.data || null;
+    } catch (err) {
+      handleError(err, "Failed to update dashboard settings");
+      return null;
+    }
+  };
+
+  const updateAdminTheaterSettings = async (
+    theaterData,
+    targetUserId = userId
+  ) => {
+    try {
+      if (!targetUserId) return null;
+      const response = await axiosInstance.put(
+        `/settings/admin/${targetUserId}/theater`,
+        theaterData
+      );
+      handleSuccess("Theater settings updated");
+      return response.data?.data || null;
+    } catch (err) {
+      handleError(err, "Failed to update theater settings");
+      return null;
+    }
+  };
+
+  const updateAdminPricingSettings = async (
+    pricingData,
+    targetUserId = userId
+  ) => {
+    try {
+      if (!targetUserId) return null;
+      const response = await axiosInstance.put(
+        `/settings/admin/${targetUserId}/pricing`,
+        pricingData
+      );
+      handleSuccess("Pricing settings updated");
+      return response.data?.data || null;
+    } catch (err) {
+      handleError(err, "Failed to update pricing settings");
+      return null;
+    }
+  };
+
+  const updateAdminNotificationSettings = async (
+    notificationData,
+    targetUserId = userId
+  ) => {
+    try {
+      if (!targetUserId) return null;
+      const response = await axiosInstance.put(
+        `/settings/admin/${targetUserId}/notification-settings`,
+        notificationData
+      );
+      handleSuccess("Notification settings updated");
+      return response.data?.data || null;
+    } catch (err) {
+      handleError(err, "Failed to update notification settings");
+      return null;
+    }
+  };
+
+  const updateAdminSecuritySettings = async (
+    securityData,
+    targetUserId = userId
+  ) => {
+    try {
+      if (!targetUserId) return null;
+      const response = await axiosInstance.put(
+        `/settings/admin/${targetUserId}/security`,
+        securityData
+      );
+      handleSuccess("Security settings updated");
+      return response.data?.data || null;
+    } catch (err) {
+      handleError(err, "Failed to update security settings");
+      return null;
+    }
+  };
+
+  const resetAdminSettings = async (targetUserId = userId) => {
+    try {
+      if (!targetUserId) return null;
+      const response = await axiosInstance.post(
+        `/settings/admin/${targetUserId}/reset`
+      );
+      handleSuccess("Settings reset to defaults");
+      return response.data?.data || null;
+    } catch (err) {
+      handleError(err, "Failed to reset settings");
+      return null;
+    }
+  };
+
   const value = {
     isSignedIn,
     isLoaded,
@@ -982,6 +1127,15 @@ export const AppContextProvider = ({ children }) => {
     fetchAdminProfile,
     updateAdminProfile,
     fetchAdminPermissions,
+    fetchAdminSettings,
+    updateAdminSettings,
+    updateAdminThemeSettings,
+    updateAdminDashboardSettings,
+    updateAdminTheaterSettings,
+    updateAdminPricingSettings,
+    updateAdminNotificationSettings,
+    updateAdminSecuritySettings,
+    resetAdminSettings,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

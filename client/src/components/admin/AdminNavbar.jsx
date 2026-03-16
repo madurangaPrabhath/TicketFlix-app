@@ -60,16 +60,40 @@ const AdminNavbar = () => {
                   </button>
                 </div>
                 <div className="p-2">
-                  <button className="w-full text-left px-4 py-2.5 text-gray-300 hover:bg-neutral-800/50 hover:text-white rounded-lg transition-colors text-sm">
+                  <button
+                    onClick={() => {
+                      navigate("/admin/settings#dashboard");
+                      setShowSettings(false);
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-gray-300 hover:bg-neutral-800/50 hover:text-white rounded-lg transition-colors text-sm"
+                  >
                     Dashboard Settings
                   </button>
-                  <button className="w-full text-left px-4 py-2.5 text-gray-300 hover:bg-neutral-800/50 hover:text-white rounded-lg transition-colors text-sm">
+                  <button
+                    onClick={() => {
+                      navigate("/admin/settings#theater");
+                      setShowSettings(false);
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-gray-300 hover:bg-neutral-800/50 hover:text-white rounded-lg transition-colors text-sm"
+                  >
                     Theater Configuration
                   </button>
-                  <button className="w-full text-left px-4 py-2.5 text-gray-300 hover:bg-neutral-800/50 hover:text-white rounded-lg transition-colors text-sm">
+                  <button
+                    onClick={() => {
+                      navigate("/admin/settings#pricing");
+                      setShowSettings(false);
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-gray-300 hover:bg-neutral-800/50 hover:text-white rounded-lg transition-colors text-sm"
+                  >
                     Pricing Settings
                   </button>
-                  <button className="w-full text-left px-4 py-2.5 text-gray-300 hover:bg-neutral-800/50 hover:text-white rounded-lg transition-colors text-sm">
+                  <button
+                    onClick={() => {
+                      navigate("/admin/settings#notifications");
+                      setShowSettings(false);
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-gray-300 hover:bg-neutral-800/50 hover:text-white rounded-lg transition-colors text-sm"
+                  >
                     Notification Preferences
                   </button>
                 </div>

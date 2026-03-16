@@ -1,6 +1,13 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Plus, List, FileText, LogOut } from "lucide-react";
+import {
+  LayoutDashboard,
+  Plus,
+  List,
+  FileText,
+  LogOut,
+  Settings,
+} from "lucide-react";
 import { assets } from "../../assets/assets";
 
 const AdminSidebar = () => {
@@ -30,6 +37,11 @@ const AdminSidebar = () => {
       name: "List Bookings",
       path: "/admin/list-bookings",
       icon: FileText,
+    },
+    {
+      name: "Settings",
+      path: "/admin/settings",
+      icon: Settings,
     },
   ];
 
