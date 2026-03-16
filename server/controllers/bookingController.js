@@ -1,6 +1,7 @@
 import Booking from "../models/Booking.js";
 import Show from "../models/Show.js";
 import Movie from "../models/Movie.js";
+import { createNotificationForUser } from "../utils/notificationService.js";
 
 export const createBooking = async (req, res) => {
   try {
@@ -74,6 +75,17 @@ export const createBooking = async (req, res) => {
     show.seats.booked.push(...seats);
     show.seats.available -= seats.length;
     await show.save();
+
+    await createNotificationForUser({
+      userId,
+      type: "booking",
+      title: "Booking created",
+      message: `${booking.movieDetails?.title || "Your movie"} booking is created. Complete payment to confirm your seats.`,
+      icon: "ticket",
+      actionUrl: "/payment",
+      actionLabel: "Complete payment",
+      severity: "info",
+    });
 
     res.status(201).json({
       success: true,
@@ -252,6 +264,17 @@ export const cancelBooking = async (req, res) => {
       await show.save();
     }
 
+    await createNotificationForUser({
+      userId: booking.userId,
+      type: "booking",
+      title: "Booking cancelled",
+      message: `${booking.movieDetails?.title || "Your movie"} booking has been cancelled.`,
+      icon: "ticket",
+      actionUrl: "/booking",
+      actionLabel: "View bookings",
+      severity: "warning",
+    });
+
     res.status(200).json({
       success: true,
       message: "Booking cancelled successfully",
@@ -288,19 +311,42 @@ export const updatePaymentStatus = async (req, res) => {
       });
     }
 
-    const booking = await Booking.findByIdAndUpdate(
-      bookingId,
-      {
-        paymentStatus,
-        paymentId: paymentId || null,
-      },
-      { new: true }
-    );
+    const booking = await Booking.findById(bookingId);
 
     if (!booking) {
       return res.status(404).json({
         success: false,
         message: "Booking not found",
+      });
+    }
+
+    const previousStatus = booking.paymentStatus;
+    booking.paymentStatus = paymentStatus;
+    booking.paymentId = paymentId || booking.paymentId || null;
+
+    if (paymentStatus === "completed" && booking.bookingStatus === "pending") {
+      booking.bookingStatus = "confirmed";
+    }
+
+    await booking.save();
+
+    if (previousStatus !== paymentStatus) {
+      const statusSeverityMap = {
+        pending: "info",
+        completed: "success",
+        failed: "error",
+        refunded: "warning",
+      };
+
+      await createNotificationForUser({
+        userId: booking.userId,
+        type: "booking",
+        title: "Payment status updated",
+        message: `${booking.movieDetails?.title || "Your booking"} payment is now ${paymentStatus}.`,
+        icon: "dollar",
+        actionUrl: "/booking",
+        actionLabel: "View booking",
+        severity: statusSeverityMap[paymentStatus] || "info",
       });
     }
 

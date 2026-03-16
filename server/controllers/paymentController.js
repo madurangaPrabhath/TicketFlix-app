@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import Booking from "../models/Booking.js";
 import Show from "../models/Show.js";
+import { createNotificationForUser } from "../utils/notificationService.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -125,6 +126,7 @@ export const confirmPayment = async (req, res) => {
       });
     }
 
+    const wasCompleted = booking.paymentStatus === "completed";
     booking.paymentStatus = "completed";
     booking.bookingStatus = "confirmed";
     booking.paymentId = paymentIntentId;
@@ -144,6 +146,19 @@ export const confirmPayment = async (req, res) => {
         );
         await show.save();
       }
+    }
+
+    if (!wasCompleted) {
+      await createNotificationForUser({
+        userId: booking.userId,
+        type: "booking",
+        title: "Payment successful",
+        message: `${booking.movieDetails?.title || "Your booking"} payment was successful and your seats are confirmed.`,
+        icon: "ticket",
+        actionUrl: "/booking",
+        actionLabel: "View ticket",
+        severity: "success",
+      });
     }
 
     res.status(200).json({
@@ -192,6 +207,17 @@ export const cancelPayment = async (req, res) => {
     }
 
     await Booking.findByIdAndDelete(bookingId);
+
+    await createNotificationForUser({
+      userId: booking.userId,
+      type: "booking",
+      title: "Payment cancelled",
+      message: `${booking.movieDetails?.title || "Your booking"} payment was cancelled and reservation has been removed.`,
+      icon: "ticket",
+      actionUrl: "/movies",
+      actionLabel: "Book again",
+      severity: "warning",
+    });
 
     res.status(200).json({
       success: true,
@@ -245,6 +271,17 @@ export const refundPayment = async (req, res) => {
       show.seats.available += booking.seats.length;
       await show.save();
     }
+
+    await createNotificationForUser({
+      userId: booking.userId,
+      type: "booking",
+      title: "Refund processed",
+      message: `${booking.movieDetails?.title || "Your booking"} refund has been processed successfully.`,
+      icon: "ticket",
+      actionUrl: "/booking",
+      actionLabel: "View details",
+      severity: "warning",
+    });
 
     res.status(200).json({
       success: true,
@@ -316,6 +353,7 @@ export const webhookHandler = async (req, res) => {
       });
 
       if (booking) {
+        const wasCompleted = booking.paymentStatus === "completed";
         booking.paymentStatus = "completed";
         booking.bookingStatus = "confirmed";
         await booking.save();
@@ -325,6 +363,19 @@ export const webhookHandler = async (req, res) => {
           show.seats.booked.push(...booking.seats);
           show.seats.available -= booking.seats.length;
           await show.save();
+        }
+
+        if (!wasCompleted) {
+          await createNotificationForUser({
+            userId: booking.userId,
+            type: "booking",
+            title: "Payment successful",
+            message: `${booking.movieDetails?.title || "Your booking"} payment was successful and your seats are confirmed.`,
+            icon: "ticket",
+            actionUrl: "/booking",
+            actionLabel: "View ticket",
+            severity: "success",
+          });
         }
       }
       break;
@@ -341,6 +392,17 @@ export const webhookHandler = async (req, res) => {
         failedBooking.paymentStatus = "failed";
         failedBooking.bookingStatus = "cancelled";
         await failedBooking.save();
+
+        await createNotificationForUser({
+          userId: failedBooking.userId,
+          type: "booking",
+          title: "Payment failed",
+          message: `${failedBooking.movieDetails?.title || "Your booking"} payment failed. Please retry to confirm seats.`,
+          icon: "alert",
+          actionUrl: "/payment",
+          actionLabel: "Retry payment",
+          severity: "error",
+        });
       }
       break;
 

@@ -1,15 +1,46 @@
 import Notification from "../models/Notification.js";
 import AdminSettings from "../models/AdminSettings.js";
 
+const NOTIFICATION_TYPES = ["booking", "show", "revenue", "system", "alert"];
+const NOTIFICATION_SEVERITIES = ["info", "warning", "success", "error"];
+
+const getAuthUserId = (req) => req.auth?.userId || null;
+
+const ensureNotificationAccess = (req, res, targetUserId) => {
+  const authUserId = getAuthUserId(req);
+
+  // Compatibility mode: if auth context is unavailable, keep existing behavior.
+  if (!authUserId) {
+    return true;
+  }
+
+  if (authUserId !== targetUserId) {
+    res.status(403).json({
+      success: false,
+      message: "Forbidden: cannot access notifications for another user",
+    });
+    return false;
+  }
+
+  return true;
+};
+
 export const getNotifications = async (req, res) => {
   try {
     const { userId } = req.params;
     const { limit = 10, skip = 0 } = req.query;
 
+    if (!ensureNotificationAccess(req, res, userId)) {
+      return;
+    }
+
+    const safeLimit = Math.max(1, Math.min(50, Number(limit) || 10));
+    const safeSkip = Math.max(0, Number(skip) || 0);
+
     const notifications = await Notification.find({ userId })
       .sort({ createdAt: -1 })
-      .limit(parseInt(limit))
-      .skip(parseInt(skip));
+      .limit(safeLimit)
+      .skip(safeSkip);
 
     const total = await Notification.countDocuments({ userId });
     const unread = await Notification.countDocuments({
@@ -23,8 +54,8 @@ export const getNotifications = async (req, res) => {
       stats: {
         total,
         unread,
-        limit: parseInt(limit),
-        skip: parseInt(skip),
+        limit: safeLimit,
+        skip: safeSkip,
       },
     });
   } catch (error) {
@@ -39,6 +70,10 @@ export const getNotifications = async (req, res) => {
 export const getUnreadNotifications = async (req, res) => {
   try {
     const { userId } = req.params;
+
+    if (!ensureNotificationAccess(req, res, userId)) {
+      return;
+    }
 
     const notifications = await Notification.find({
       userId,
@@ -63,11 +98,21 @@ export const markNotificationAsRead = async (req, res) => {
   try {
     const { notificationId } = req.params;
 
-    const notification = await Notification.findByIdAndUpdate(
-      notificationId,
-      { read: true },
-      { new: true }
-    );
+    const notification = await Notification.findById(notificationId);
+
+    if (!notification) {
+      return res.status(404).json({
+        success: false,
+        message: "Notification not found",
+      });
+    }
+
+    if (!ensureNotificationAccess(req, res, notification.userId)) {
+      return;
+    }
+
+    notification.read = true;
+    await notification.save();
 
     res.status(200).json({
       success: true,
@@ -86,6 +131,10 @@ export const markNotificationAsRead = async (req, res) => {
 export const markAllNotificationsAsRead = async (req, res) => {
   try {
     const { userId } = req.params;
+
+    if (!ensureNotificationAccess(req, res, userId)) {
+      return;
+    }
 
     await Notification.updateMany({ userId, read: false }, { read: true });
 
@@ -106,6 +155,19 @@ export const deleteNotification = async (req, res) => {
   try {
     const { notificationId } = req.params;
 
+    const notification = await Notification.findById(notificationId);
+
+    if (!notification) {
+      return res.status(404).json({
+        success: false,
+        message: "Notification not found",
+      });
+    }
+
+    if (!ensureNotificationAccess(req, res, notification.userId)) {
+      return;
+    }
+
     await Notification.findByIdAndDelete(notificationId);
 
     res.status(200).json({
@@ -124,6 +186,10 @@ export const deleteNotification = async (req, res) => {
 export const deleteAllNotifications = async (req, res) => {
   try {
     const { userId } = req.params;
+
+    if (!ensureNotificationAccess(req, res, userId)) {
+      return;
+    }
 
     await Notification.deleteMany({ userId });
 
@@ -153,6 +219,36 @@ export const createNotification = async (req, res) => {
       severity,
     } = req.body;
 
+    if (!ensureNotificationAccess(req, res, userId)) {
+      return;
+    }
+
+    if (!userId || !type || !title || !message) {
+      return res.status(400).json({
+        success: false,
+        message: "userId, type, title and message are required",
+      });
+    }
+
+    if (!NOTIFICATION_TYPES.includes(type)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid notification type. Allowed values: ${NOTIFICATION_TYPES.join(
+          ", "
+        )}`,
+      });
+    }
+
+    const safeSeverity = severity || "info";
+    if (!NOTIFICATION_SEVERITIES.includes(safeSeverity)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid severity. Allowed values: ${NOTIFICATION_SEVERITIES.join(
+          ", "
+        )}`,
+      });
+    }
+
     const notification = new Notification({
       userId,
       type,
@@ -161,7 +257,7 @@ export const createNotification = async (req, res) => {
       icon: icon || "bell",
       actionUrl,
       actionLabel,
-      severity: severity || "info",
+      severity: safeSeverity,
     });
 
     await notification.save();

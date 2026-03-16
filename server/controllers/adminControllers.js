@@ -2,6 +2,7 @@ import Movie from "../models/Movie.js";
 import Show from "../models/Show.js";
 import Booking from "../models/Booking.js";
 import User from "../models/User.js";
+import { notifyUsersForShow } from "../utils/notificationService.js";
 
 export const getDashboardStats = async (req, res) => {
   try {
@@ -160,6 +161,15 @@ export const updateShow = async (req, res) => {
     const { showId } = req.params;
     const updateData = req.body;
 
+    const previousShow = await Show.findById(showId);
+
+    if (!previousShow) {
+      return res.status(404).json({
+        success: false,
+        message: "Show not found",
+      });
+    }
+
     delete updateData.seats;
     delete updateData.booked;
 
@@ -168,10 +178,23 @@ export const updateShow = async (req, res) => {
       runValidators: true,
     }).populate("movieId");
 
-    if (!show) {
-      return res.status(404).json({
-        success: false,
-        message: "Show not found",
+    const previousDate = previousShow.showDate
+      ? new Date(previousShow.showDate).getTime()
+      : null;
+    const nextDate = show.showDate ? new Date(show.showDate).getTime() : null;
+
+    const isScheduleChanged =
+      previousDate !== nextDate ||
+      previousShow.showTime !== show.showTime ||
+      previousShow.status !== show.status;
+
+    if (isScheduleChanged) {
+      await notifyUsersForShow({
+        showId: show._id,
+        title: "Show schedule updated",
+        message: `${show.movieDetails?.title || "Your movie"} show details were updated by admin. Please review your booking.`,
+        actionUrl: "/booking",
+        severity: "warning",
       });
     }
 
