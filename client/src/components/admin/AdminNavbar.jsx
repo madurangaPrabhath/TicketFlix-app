@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Film, Settings, LogOut, X } from "lucide-react";
+import { Film, Settings, LogOut } from "lucide-react";
 import { useClerk, useUser, UserButton } from "@clerk/clerk-react";
 import NotificationDropdown from "../NotificationDropdown";
 
@@ -8,7 +8,6 @@ const AdminNavbar = () => {
   const navigate = useNavigate();
   const { user } = useUser();
   const { signOut } = useClerk();
-  const [showSettings, setShowSettings] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -38,68 +37,14 @@ const AdminNavbar = () => {
             panelClassName="w-[22rem]"
           />
 
-          <div className="relative">
-            <button
-              onClick={() => {
-                setShowSettings(!showSettings);
-              }}
-              className="p-2 text-gray-400 hover:text-white transition-colors duration-300 hover:bg-white/10 rounded-lg"
-            >
-              <Settings size={20} />
-            </button>
-
-            {showSettings && (
-              <div className="absolute right-0 mt-2 w-56 bg-neutral-900 border border-neutral-800 rounded-lg shadow-xl z-50">
-                <div className="p-4 border-b border-neutral-800 flex justify-between items-center">
-                  <h3 className="text-white font-semibold text-sm">Settings</h3>
-                  <button
-                    onClick={() => setShowSettings(false)}
-                    className="text-gray-400 hover:text-white"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-                <div className="p-2">
-                  <button
-                    onClick={() => {
-                      navigate("/admin/settings#dashboard");
-                      setShowSettings(false);
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-gray-300 hover:bg-neutral-800/50 hover:text-white rounded-lg transition-colors text-sm"
-                  >
-                    Dashboard Settings
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigate("/admin/settings#theater");
-                      setShowSettings(false);
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-gray-300 hover:bg-neutral-800/50 hover:text-white rounded-lg transition-colors text-sm"
-                  >
-                    Theater Configuration
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigate("/admin/settings#pricing");
-                      setShowSettings(false);
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-gray-300 hover:bg-neutral-800/50 hover:text-white rounded-lg transition-colors text-sm"
-                  >
-                    Pricing Settings
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigate("/admin/settings#notifications");
-                      setShowSettings(false);
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-gray-300 hover:bg-neutral-800/50 hover:text-white rounded-lg transition-colors text-sm"
-                  >
-                    Notification Preferences
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => navigate("/admin/settings")}
+            className="p-2 text-gray-400 hover:text-white transition-colors duration-300 hover:bg-white/10 rounded-lg"
+            title="Admin Settings"
+            aria-label="Open admin settings"
+          >
+            <Settings size={20} />
+          </button>
 
           <div className="flex items-center gap-3 pl-6 border-l border-neutral-700">
             <div className="text-right hidden sm:block">
