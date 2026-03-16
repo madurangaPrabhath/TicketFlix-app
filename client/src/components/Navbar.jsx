@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Film, Menu, X, Search, TicketPlus } from "lucide-react";
 import { useUser, UserButton } from "@clerk/clerk-react";
+import NotificationDropdown from "./NotificationDropdown";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -11,7 +12,7 @@ const Navbar = () => {
   const searchRef = useRef(null);
   const searchButtonRef = useRef(null);
 
-  const { user, isSignedIn, isLoaded } = useUser();
+  const { user, isLoaded } = useUser();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -198,7 +199,8 @@ const Navbar = () => {
               </button>
             </div>
           ) : (
-            <div className="hidden md:block">
+            <div className="hidden md:flex items-center gap-2">
+              <NotificationDropdown buttonClassName="hover:bg-white/10" />
               <UserButton afterSignOutUrl="/">
                 <UserButton.MenuItems>
                   <UserButton.Action

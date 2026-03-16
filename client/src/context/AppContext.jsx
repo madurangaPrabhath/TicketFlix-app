@@ -21,6 +21,10 @@ export const AppContextProvider = ({ children }) => {
   const [adminUsers, setAdminUsers] = useState([]);
   const [adminReports, setAdminReports] = useState(null);
 
+  const [notifications, setNotifications] = useState([]);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+
   const [movies, setMovies] = useState([]);
   const [shows, setShows] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
@@ -503,6 +507,186 @@ export const AppContextProvider = ({ children }) => {
     }
   };
 
+  const fetchNotifications = async (
+    targetUserId = userId,
+    options = { limit: 20, skip: 0 }
+  ) => {
+    try {
+      if (!targetUserId) {
+        return { data: [], stats: { unread: 0, total: 0 } };
+      }
+
+      setNotificationsLoading(true);
+
+      const response = await axiosInstance.get(
+        `/settings/notifications/${targetUserId}`,
+        {
+          params: {
+            limit: options.limit ?? 20,
+            skip: options.skip ?? 0,
+          },
+        }
+      );
+
+      const nextNotifications = response.data?.data || [];
+      const unreadCount =
+        response.data?.stats?.unread ??
+        nextNotifications.filter((notification) => !notification.read).length;
+
+      if ((options.skip ?? 0) > 0) {
+        setNotifications((prev) => {
+          const merged = [...prev, ...nextNotifications];
+          const uniqueById = new Map(
+            merged.map((notification) => [notification._id, notification])
+          );
+          return Array.from(uniqueById.values());
+        });
+      } else {
+        setNotifications(nextNotifications);
+      }
+
+      setUnreadNotificationCount(unreadCount);
+      return response.data;
+    } catch (err) {
+      handleError(err, "Failed to fetch notifications");
+      return { data: [], stats: { unread: 0, total: 0 } };
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  const fetchUnreadNotifications = async (targetUserId = userId) => {
+    try {
+      if (!targetUserId) {
+        return [];
+      }
+
+      const response = await axiosInstance.get(
+        `/settings/notifications/${targetUserId}/unread`
+      );
+
+      const unread = response.data?.data || [];
+      setUnreadNotificationCount(response.data?.count ?? unread.length);
+      return unread;
+    } catch (err) {
+      handleError(err, "Failed to fetch unread notifications");
+      return [];
+    }
+  };
+
+  const markNotificationAsRead = async (notificationId) => {
+    try {
+      if (!notificationId) {
+        return null;
+      }
+
+      const response = await axiosInstance.put(
+        `/settings/notifications/${notificationId}/read`
+      );
+
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification._id === notificationId
+            ? { ...notification, read: true }
+            : notification
+        )
+      );
+
+      setUnreadNotificationCount((prev) => Math.max(0, prev - 1));
+
+      return response.data?.data;
+    } catch (err) {
+      handleError(err, "Failed to mark notification as read");
+      return null;
+    }
+  };
+
+  const markAllNotificationsAsRead = async (targetUserId = userId) => {
+    try {
+      if (!targetUserId) {
+        return null;
+      }
+
+      const response = await axiosInstance.put(
+        `/settings/notifications/${targetUserId}/read-all`
+      );
+
+      setNotifications((prev) =>
+        prev.map((notification) => ({ ...notification, read: true }))
+      );
+      setUnreadNotificationCount(0);
+
+      return response.data;
+    } catch (err) {
+      handleError(err, "Failed to mark all notifications as read");
+      return null;
+    }
+  };
+
+  const deleteNotification = async (notificationId) => {
+    try {
+      if (!notificationId) {
+        return null;
+      }
+
+      await axiosInstance.delete(`/settings/notifications/${notificationId}`);
+
+      setNotifications((prev) => {
+        const target = prev.find(
+          (notification) => notification._id === notificationId
+        );
+        if (target && !target.read) {
+          setUnreadNotificationCount((count) => Math.max(0, count - 1));
+        }
+        return prev.filter((notification) => notification._id !== notificationId);
+      });
+
+      return true;
+    } catch (err) {
+      handleError(err, "Failed to delete notification");
+      return null;
+    }
+  };
+
+  const deleteAllNotifications = async (targetUserId = userId) => {
+    try {
+      if (!targetUserId) {
+        return null;
+      }
+
+      const response = await axiosInstance.delete(
+        `/settings/notifications/${targetUserId}/all`
+      );
+
+      setNotifications([]);
+      setUnreadNotificationCount(0);
+
+      return response.data;
+    } catch (err) {
+      handleError(err, "Failed to delete all notifications");
+      return null;
+    }
+  };
+
+  const createNotification = async (payload) => {
+    try {
+      const response = await axiosInstance.post("/settings/notifications", payload);
+      const newNotification = response.data?.data;
+
+      if (newNotification && newNotification.userId === userId) {
+        setNotifications((prev) => [newNotification, ...prev]);
+        if (!newNotification.read) {
+          setUnreadNotificationCount((count) => count + 1);
+        }
+      }
+
+      return newNotification;
+    } catch (err) {
+      handleError(err, "Failed to create notification");
+      return null;
+    }
+  };
+
   const fetchAdminDashboard = async () => {
     try {
       setLoading(true);
@@ -719,6 +903,10 @@ export const AppContextProvider = ({ children }) => {
     adminUsers,
     adminReports,
 
+    notifications,
+    unreadNotificationCount,
+    notificationsLoading,
+
     movies,
     shows,
     selectedMovie,
@@ -761,6 +949,14 @@ export const AppContextProvider = ({ children }) => {
     fetchUserStats,
     fetchUserDashboard,
     updateNotificationSettings,
+
+    fetchNotifications,
+    fetchUnreadNotifications,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
+    deleteNotification,
+    deleteAllNotifications,
+    createNotification,
 
     getUserFavorites,
     addToFavorites,

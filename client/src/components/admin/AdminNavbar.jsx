@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Film, Bell, Settings, LogOut, X } from "lucide-react";
+import { Film, Settings, LogOut, X } from "lucide-react";
 import { useClerk, useUser, UserButton } from "@clerk/clerk-react";
+import NotificationDropdown from "../NotificationDropdown";
 
 const AdminNavbar = () => {
   const navigate = useNavigate();
   const { user } = useUser();
   const { signOut } = useClerk();
-  const [showNotifications, setShowNotifications] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
   const handleLogout = async () => {
@@ -33,66 +33,15 @@ const AdminNavbar = () => {
         <div className="flex-1"></div>
 
         <div className="flex items-center gap-6 shrink-0">
-          <div className="relative">
-            <button
-              onClick={() => {
-                setShowNotifications(!showNotifications);
-                setShowSettings(false);
-              }}
-              className="relative p-2 text-gray-400 hover:text-white transition-colors duration-300 hover:bg-white/10 rounded-lg"
-            >
-              <Bell size={20} />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-600 rounded-full"></span>
-            </button>
-
-            {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-neutral-900 border border-neutral-800 rounded-lg shadow-xl z-50">
-                <div className="p-4 border-b border-neutral-800 flex justify-between items-center">
-                  <h3 className="text-white font-semibold text-sm">
-                    Notifications
-                  </h3>
-                  <button
-                    onClick={() => setShowNotifications(false)}
-                    className="text-gray-400 hover:text-white"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-                <div className="max-h-64 overflow-y-auto">
-                  <div className="p-4 border-b border-neutral-800 hover:bg-neutral-800/50 cursor-pointer transition-colors">
-                    <p className="text-white text-sm font-medium">
-                      New Booking
-                    </p>
-                    <p className="text-gray-400 text-xs mt-1">
-                      5 new bookings received
-                    </p>
-                  </div>
-                  <div className="p-4 border-b border-neutral-800 hover:bg-neutral-800/50 cursor-pointer transition-colors">
-                    <p className="text-white text-sm font-medium">
-                      Show Updated
-                    </p>
-                    <p className="text-gray-400 text-xs mt-1">
-                      Inception show time changed
-                    </p>
-                  </div>
-                  <div className="p-4 hover:bg-neutral-800/50 cursor-pointer transition-colors">
-                    <p className="text-white text-sm font-medium">
-                      Revenue Alert
-                    </p>
-                    <p className="text-gray-400 text-xs mt-1">
-                      Daily revenue target reached
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          <NotificationDropdown
+            buttonClassName="hover:bg-white/10"
+            panelClassName="w-[22rem]"
+          />
 
           <div className="relative">
             <button
               onClick={() => {
                 setShowSettings(!showSettings);
-                setShowNotifications(false);
               }}
               className="p-2 text-gray-400 hover:text-white transition-colors duration-300 hover:bg-white/10 rounded-lg"
             >
