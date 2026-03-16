@@ -3,13 +3,15 @@ import AdminSettings from "../models/AdminSettings.js";
 
 const NOTIFICATION_TYPES = ["booking", "show", "revenue", "system", "alert"];
 const NOTIFICATION_SEVERITIES = ["info", "warning", "success", "error"];
+const THEME_MODES = ["light", "dark"];
+const DASHBOARD_LAYOUTS = ["grid", "list"];
+const SHOW_FORMATS = ["2D", "3D", "IMAX"];
 
 const getAuthUserId = (req) => req.auth?.userId || null;
 
 const ensureNotificationAccess = (req, res, targetUserId) => {
   const authUserId = getAuthUserId(req);
 
-  // Compatibility mode: if auth context is unavailable, keep existing behavior.
   if (!authUserId) {
     return true;
   }
@@ -23,6 +25,212 @@ const ensureNotificationAccess = (req, res, targetUserId) => {
   }
 
   return true;
+};
+
+const ensureAdminSettingsAccess = (req, res, targetUserId) => {
+  const authUserId = getAuthUserId(req);
+
+  if (!authUserId) {
+    return true;
+  }
+
+  if (authUserId !== targetUserId) {
+    res.status(403).json({
+      success: false,
+      message: "Forbidden: cannot access settings for another user",
+    });
+    return false;
+  }
+
+  return true;
+};
+
+const getOrCreateAdminSettings = async (userId) => {
+  let settings = await AdminSettings.findOne({ userId });
+  if (!settings) {
+    settings = new AdminSettings({ userId });
+  }
+  return settings;
+};
+
+const isHexColor = (value) => /^#([A-Fa-f0-9]{6})$/.test(value);
+
+const applyThemeUpdates = (settings, payload = {}) => {
+  const { mode, primaryColor, accentColor } = payload;
+
+  if (mode !== undefined) {
+    if (!THEME_MODES.includes(mode)) {
+      return "Invalid theme mode. Allowed values: light, dark";
+    }
+    settings.theme.mode = mode;
+  }
+
+  if (primaryColor !== undefined) {
+    if (typeof primaryColor !== "string" || !isHexColor(primaryColor)) {
+      return "primaryColor must be a valid hex color like #e50914";
+    }
+    settings.theme.primaryColor = primaryColor;
+  }
+
+  if (accentColor !== undefined) {
+    if (typeof accentColor !== "string" || !isHexColor(accentColor)) {
+      return "accentColor must be a valid hex color like #1f2937";
+    }
+    settings.theme.accentColor = accentColor;
+  }
+
+  return null;
+};
+
+const applyDashboardUpdates = (settings, payload = {}) => {
+  const { layout, itemsPerPage, showSummary } = payload;
+
+  if (layout !== undefined) {
+    if (!DASHBOARD_LAYOUTS.includes(layout)) {
+      return "Invalid dashboard layout. Allowed values: grid, list";
+    }
+    settings.dashboard.layout = layout;
+  }
+
+  if (itemsPerPage !== undefined) {
+    const parsed = Number(itemsPerPage);
+    if (!Number.isInteger(parsed) || parsed < 1 || parsed > 100) {
+      return "itemsPerPage must be an integer between 1 and 100";
+    }
+    settings.dashboard.itemsPerPage = parsed;
+  }
+
+  if (showSummary !== undefined) {
+    if (typeof showSummary !== "boolean") {
+      return "showSummary must be boolean";
+    }
+    settings.dashboard.showSummary = showSummary;
+  }
+
+  return null;
+};
+
+const applyTheaterUpdates = (settings, payload = {}) => {
+  const {
+    defaultCity,
+    defaultLanguage,
+    defaultFormat,
+    standardPrice,
+    premiumPrice,
+    vipPrice,
+  } = payload;
+
+  if (defaultCity !== undefined) {
+    if (typeof defaultCity !== "string") {
+      return "defaultCity must be a string";
+    }
+    settings.theater.defaultCity = defaultCity.trim();
+  }
+
+  if (defaultLanguage !== undefined) {
+    if (typeof defaultLanguage !== "string" || !defaultLanguage.trim()) {
+      return "defaultLanguage must be a non-empty string";
+    }
+    settings.theater.defaultLanguage = defaultLanguage.trim();
+  }
+
+  if (defaultFormat !== undefined) {
+    if (!SHOW_FORMATS.includes(defaultFormat)) {
+      return "Invalid defaultFormat. Allowed values: 2D, 3D, IMAX";
+    }
+    settings.theater.defaultFormat = defaultFormat;
+  }
+
+  const priceFields = [
+    ["standardPrice", standardPrice],
+    ["premiumPrice", premiumPrice],
+    ["vipPrice", vipPrice],
+  ];
+
+  for (const [key, value] of priceFields) {
+    if (value !== undefined) {
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        return `${key} must be a non-negative number`;
+      }
+      settings.theater[key] = parsed;
+    }
+  }
+
+  return null;
+};
+
+const applyPricingUpdates = (settings, payload = {}) => {
+  const { currency, taxPercentage, convenienceFee } = payload;
+
+  if (currency !== undefined) {
+    if (typeof currency !== "string" || currency.trim().length < 2) {
+      return "currency must be a string (e.g. INR, USD)";
+    }
+    settings.pricing.currency = currency.trim().toUpperCase();
+  }
+
+  if (taxPercentage !== undefined) {
+    const parsed = Number(taxPercentage);
+    if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) {
+      return "taxPercentage must be a number between 0 and 100";
+    }
+    settings.pricing.taxPercentage = parsed;
+  }
+
+  if (convenienceFee !== undefined) {
+    const parsed = Number(convenienceFee);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      return "convenienceFee must be a non-negative number";
+    }
+    settings.pricing.convenienceFee = parsed;
+  }
+
+  return null;
+};
+
+const applyNotificationPreferenceUpdates = (settings, payload = {}) => {
+  const keys = [
+    "email",
+    "push",
+    "sms",
+    "bookingNotifications",
+    "revenueAlerts",
+    "showUpdates",
+    "systemNotifications",
+  ];
+
+  for (const key of keys) {
+    if (payload[key] !== undefined) {
+      if (typeof payload[key] !== "boolean") {
+        return `${key} must be boolean`;
+      }
+      settings.notifications[key] = payload[key];
+    }
+  }
+
+  return null;
+};
+
+const applySecurityUpdates = (settings, payload = {}) => {
+  const { twoFactorEnabled, sessionTimeout } = payload;
+
+  if (twoFactorEnabled !== undefined) {
+    if (typeof twoFactorEnabled !== "boolean") {
+      return "twoFactorEnabled must be boolean";
+    }
+    settings.security.twoFactorEnabled = twoFactorEnabled;
+  }
+
+  if (sessionTimeout !== undefined) {
+    const parsed = Number(sessionTimeout);
+    if (!Number.isInteger(parsed) || parsed < 300 || parsed > 86400) {
+      return "sessionTimeout must be an integer between 300 and 86400 seconds";
+    }
+    settings.security.sessionTimeout = parsed;
+  }
+
+  return null;
 };
 
 export const getNotifications = async (req, res) => {
@@ -280,12 +488,12 @@ export const getAdminSettings = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    let settings = await AdminSettings.findOne({ userId });
-
-    if (!settings) {
-      settings = new AdminSettings({ userId });
-      await settings.save();
+    if (!ensureAdminSettingsAccess(req, res, userId)) {
+      return;
     }
+
+    const settings = await getOrCreateAdminSettings(userId);
+    await settings.save();
 
     res.status(200).json({
       success: true,
@@ -305,12 +513,65 @@ export const updateAdminSettings = async (req, res) => {
     const { userId } = req.params;
     const updateData = req.body;
 
-    let settings = await AdminSettings.findOne({ userId });
+    if (!ensureAdminSettingsAccess(req, res, userId)) {
+      return;
+    }
 
-    if (!settings) {
-      settings = new AdminSettings({ userId, ...updateData });
-    } else {
-      Object.assign(settings, updateData);
+    const allowedSections = [
+      "theme",
+      "dashboard",
+      "theater",
+      "pricing",
+      "notifications",
+      "security",
+    ];
+
+    const unknownKeys = Object.keys(updateData || {}).filter(
+      (key) => !allowedSections.includes(key)
+    );
+
+    if (unknownKeys.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Unknown settings keys: ${unknownKeys.join(", ")}`,
+      });
+    }
+
+    const settings = await getOrCreateAdminSettings(userId);
+
+    const themeError = applyThemeUpdates(settings, updateData?.theme);
+    if (themeError) {
+      return res.status(400).json({ success: false, message: themeError });
+    }
+
+    const dashboardError = applyDashboardUpdates(settings, updateData?.dashboard);
+    if (dashboardError) {
+      return res.status(400).json({ success: false, message: dashboardError });
+    }
+
+    const theaterError = applyTheaterUpdates(settings, updateData?.theater);
+    if (theaterError) {
+      return res.status(400).json({ success: false, message: theaterError });
+    }
+
+    const pricingError = applyPricingUpdates(settings, updateData?.pricing);
+    if (pricingError) {
+      return res.status(400).json({ success: false, message: pricingError });
+    }
+
+    const notificationError = applyNotificationPreferenceUpdates(
+      settings,
+      updateData?.notifications
+    );
+    if (notificationError) {
+      return res
+        .status(400)
+        .json({ success: false, message: notificationError });
+    }
+
+    const securityError = applySecurityUpdates(settings, updateData?.security);
+    if (securityError) {
+      return res.status(400).json({ success: false, message: securityError });
     }
 
     await settings.save();
@@ -332,17 +593,21 @@ export const updateAdminSettings = async (req, res) => {
 export const updateThemeSettings = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { mode, primaryColor, accentColor } = req.body;
+    const payload = req.body || {};
 
-    let settings = await AdminSettings.findOne({ userId });
-
-    if (!settings) {
-      settings = new AdminSettings({ userId });
+    if (!ensureAdminSettingsAccess(req, res, userId)) {
+      return;
     }
 
-    if (mode) settings.theme.mode = mode;
-    if (primaryColor) settings.theme.primaryColor = primaryColor;
-    if (accentColor) settings.theme.accentColor = accentColor;
+    const settings = await getOrCreateAdminSettings(userId);
+
+    const validationError = applyThemeUpdates(settings, payload);
+    if (validationError) {
+      return res.status(400).json({
+        success: false,
+        message: validationError,
+      });
+    }
 
     await settings.save();
 
@@ -363,18 +628,21 @@ export const updateThemeSettings = async (req, res) => {
 export const updateDashboardSettings = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { layout, itemsPerPage, showSummary } = req.body;
+    const payload = req.body || {};
 
-    let settings = await AdminSettings.findOne({ userId });
-
-    if (!settings) {
-      settings = new AdminSettings({ userId });
+    if (!ensureAdminSettingsAccess(req, res, userId)) {
+      return;
     }
 
-    if (layout) settings.dashboard.layout = layout;
-    if (itemsPerPage) settings.dashboard.itemsPerPage = itemsPerPage;
-    if (typeof showSummary === "boolean")
-      settings.dashboard.showSummary = showSummary;
+    const settings = await getOrCreateAdminSettings(userId);
+
+    const validationError = applyDashboardUpdates(settings, payload);
+    if (validationError) {
+      return res.status(400).json({
+        success: false,
+        message: validationError,
+      });
+    }
 
     await settings.save();
 
@@ -395,27 +663,21 @@ export const updateDashboardSettings = async (req, res) => {
 export const updateTheaterSettings = async (req, res) => {
   try {
     const { userId } = req.params;
-    const {
-      defaultCity,
-      defaultLanguage,
-      defaultFormat,
-      standardPrice,
-      premiumPrice,
-      vipPrice,
-    } = req.body;
+    const payload = req.body || {};
 
-    let settings = await AdminSettings.findOne({ userId });
-
-    if (!settings) {
-      settings = new AdminSettings({ userId });
+    if (!ensureAdminSettingsAccess(req, res, userId)) {
+      return;
     }
 
-    if (defaultCity) settings.theater.defaultCity = defaultCity;
-    if (defaultLanguage) settings.theater.defaultLanguage = defaultLanguage;
-    if (defaultFormat) settings.theater.defaultFormat = defaultFormat;
-    if (standardPrice) settings.theater.standardPrice = standardPrice;
-    if (premiumPrice) settings.theater.premiumPrice = premiumPrice;
-    if (vipPrice) settings.theater.vipPrice = vipPrice;
+    const settings = await getOrCreateAdminSettings(userId);
+
+    const validationError = applyTheaterUpdates(settings, payload);
+    if (validationError) {
+      return res.status(400).json({
+        success: false,
+        message: validationError,
+      });
+    }
 
     await settings.save();
 
@@ -436,19 +698,21 @@ export const updateTheaterSettings = async (req, res) => {
 export const updatePricingSettings = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { currency, taxPercentage, convenienceFee } = req.body;
+    const payload = req.body || {};
 
-    let settings = await AdminSettings.findOne({ userId });
-
-    if (!settings) {
-      settings = new AdminSettings({ userId });
+    if (!ensureAdminSettingsAccess(req, res, userId)) {
+      return;
     }
 
-    if (currency) settings.pricing.currency = currency;
-    if (typeof taxPercentage === "number")
-      settings.pricing.taxPercentage = taxPercentage;
-    if (typeof convenienceFee === "number")
-      settings.pricing.convenienceFee = convenienceFee;
+    const settings = await getOrCreateAdminSettings(userId);
+
+    const validationError = applyPricingUpdates(settings, payload);
+    if (validationError) {
+      return res.status(400).json({
+        success: false,
+        message: validationError,
+      });
+    }
 
     await settings.save();
 
@@ -469,33 +733,21 @@ export const updatePricingSettings = async (req, res) => {
 export const updateNotificationSettings = async (req, res) => {
   try {
     const { userId } = req.params;
-    const {
-      email,
-      push,
-      sms,
-      bookingNotifications,
-      revenueAlerts,
-      showUpdates,
-      systemNotifications,
-    } = req.body;
+    const payload = req.body || {};
 
-    let settings = await AdminSettings.findOne({ userId });
-
-    if (!settings) {
-      settings = new AdminSettings({ userId });
+    if (!ensureAdminSettingsAccess(req, res, userId)) {
+      return;
     }
 
-    if (typeof email === "boolean") settings.notifications.email = email;
-    if (typeof push === "boolean") settings.notifications.push = push;
-    if (typeof sms === "boolean") settings.notifications.sms = sms;
-    if (typeof bookingNotifications === "boolean")
-      settings.notifications.bookingNotifications = bookingNotifications;
-    if (typeof revenueAlerts === "boolean")
-      settings.notifications.revenueAlerts = revenueAlerts;
-    if (typeof showUpdates === "boolean")
-      settings.notifications.showUpdates = showUpdates;
-    if (typeof systemNotifications === "boolean")
-      settings.notifications.systemNotifications = systemNotifications;
+    const settings = await getOrCreateAdminSettings(userId);
+
+    const validationError = applyNotificationPreferenceUpdates(settings, payload);
+    if (validationError) {
+      return res.status(400).json({
+        success: false,
+        message: validationError,
+      });
+    }
 
     await settings.save();
 
@@ -516,17 +768,21 @@ export const updateNotificationSettings = async (req, res) => {
 export const updateSecuritySettings = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { twoFactorEnabled, sessionTimeout } = req.body;
+    const payload = req.body || {};
 
-    let settings = await AdminSettings.findOne({ userId });
-
-    if (!settings) {
-      settings = new AdminSettings({ userId });
+    if (!ensureAdminSettingsAccess(req, res, userId)) {
+      return;
     }
 
-    if (typeof twoFactorEnabled === "boolean")
-      settings.security.twoFactorEnabled = twoFactorEnabled;
-    if (sessionTimeout) settings.security.sessionTimeout = sessionTimeout;
+    const settings = await getOrCreateAdminSettings(userId);
+
+    const validationError = applySecurityUpdates(settings, payload);
+    if (validationError) {
+      return res.status(400).json({
+        success: false,
+        message: validationError,
+      });
+    }
 
     await settings.save();
 
@@ -547,6 +803,10 @@ export const updateSecuritySettings = async (req, res) => {
 export const resetSettings = async (req, res) => {
   try {
     const { userId } = req.params;
+
+    if (!ensureAdminSettingsAccess(req, res, userId)) {
+      return;
+    }
 
     await AdminSettings.deleteOne({ userId });
 

@@ -17,10 +17,12 @@ const adminSettingsSchema = new mongoose.Schema(
       primaryColor: {
         type: String,
         default: "#e50914",
+        match: /^#([A-Fa-f0-9]{6})$/,
       },
       accentColor: {
         type: String,
         default: "#1f2937",
+        match: /^#([A-Fa-f0-9]{6})$/,
       },
     },
     dashboard: {
@@ -32,6 +34,8 @@ const adminSettingsSchema = new mongoose.Schema(
       itemsPerPage: {
         type: Number,
         default: 10,
+        min: 1,
+        max: 100,
       },
       showSummary: {
         type: Boolean,
@@ -54,14 +58,17 @@ const adminSettingsSchema = new mongoose.Schema(
       standardPrice: {
         type: Number,
         default: 200,
+        min: 0,
       },
       premiumPrice: {
         type: Number,
         default: 350,
+        min: 0,
       },
       vipPrice: {
         type: Number,
         default: 500,
+        min: 0,
       },
     },
     pricing: {
@@ -72,10 +79,13 @@ const adminSettingsSchema = new mongoose.Schema(
       taxPercentage: {
         type: Number,
         default: 18,
+        min: 0,
+        max: 100,
       },
       convenienceFee: {
         type: Number,
         default: 0,
+        min: 0,
       },
     },
     notifications: {
@@ -116,6 +126,8 @@ const adminSettingsSchema = new mongoose.Schema(
       sessionTimeout: {
         type: Number,
         default: 3600,
+        min: 300,
+        max: 86400,
       },
       lastPasswordChange: {
         type: Date,
