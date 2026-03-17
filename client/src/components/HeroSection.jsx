@@ -3,9 +3,11 @@ import { Calendar, Clock, Play, Info, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import backgroundImage from "../assets/backgroundImage.png";
 import marvelLogo from "../assets/marvelLogo.svg";
+import { useAppContext } from "../context/AppContext";
 
 const HeroSection = ({ movie }) => {
   const navigate = useNavigate();
+  const { themeMode } = useAppContext();
 
   const defaultMovie = {
     title: "Avengers: Endgame",
@@ -41,7 +43,13 @@ const HeroSection = ({ movie }) => {
       <div className="absolute inset-0 bg-linear-to-r from-black/90 via-black/60 to-transparent"></div>
       <div className="absolute inset-0 bg-linear-to-t from-black via-transparent to-transparent"></div>
 
-      <div className="relative z-10 max-w-3xl">
+      <div
+        className={`relative z-10 max-w-3xl ${
+          themeMode === "light"
+            ? "bg-white/85 backdrop-blur-sm border border-slate-200 rounded-xl p-5 md:p-6"
+            : ""
+        }`}
+      >
         {displayMovie.logo && (
           <img
             src={displayMovie.logo}
@@ -60,7 +68,11 @@ const HeroSection = ({ movie }) => {
           )}
         </h1>
 
-        <div className="flex items-center gap-4 text-gray-300 text-sm md:text-base mb-6">
+        <div
+          className={`flex items-center gap-4 text-sm md:text-base mb-6 ${
+            themeMode === "light" ? "text-slate-700" : "text-gray-300"
+          }`}
+        >
           <span className="flex items-center gap-1.5">
             {displayMovie.genres.join(" | ")}
           </span>
@@ -77,7 +89,11 @@ const HeroSection = ({ movie }) => {
         </div>
 
         {displayMovie.description && (
-          <p className="text-gray-200 text-base md:text-lg leading-relaxed max-w-2xl mb-8">
+          <p
+            className={`text-base md:text-lg leading-relaxed max-w-2xl mb-8 ${
+              themeMode === "light" ? "text-slate-800" : "text-gray-200"
+            }`}
+          >
             {displayMovie.description}
           </p>
         )}
