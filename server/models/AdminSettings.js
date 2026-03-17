@@ -119,10 +119,6 @@ const adminSettingsSchema = new mongoose.Schema(
       },
     },
     security: {
-      twoFactorEnabled: {
-        type: Boolean,
-        default: false,
-      },
       sessionTimeout: {
         type: Number,
         default: 3600,

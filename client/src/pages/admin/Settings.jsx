@@ -25,7 +25,6 @@ const defaultSettings = {
     systemNotifications: true,
   },
   security: {
-    twoFactorEnabled: false,
     sessionTimeout: 3600,
   },
 };
@@ -285,20 +284,6 @@ const Settings = () => {
 
         {activeTab === "security" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <label className="flex items-center justify-between bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-gray-300">
-              <span>Two-factor authentication</span>
-              <input
-                type="checkbox"
-                checked={form.security.twoFactorEnabled}
-                onChange={(e) =>
-                  updateSection(
-                    "security",
-                    "twoFactorEnabled",
-                    e.target.checked
-                  )
-                }
-              />
-            </label>
             <div>
               <p className="text-sm text-gray-400 mb-2">Session Timeout (seconds)</p>
               <input

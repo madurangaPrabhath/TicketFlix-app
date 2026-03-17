@@ -220,13 +220,13 @@ const applyNotificationPreferenceUpdates = (settings, payload = {}) => {
 };
 
 const applySecurityUpdates = (settings, payload = {}) => {
-  const { twoFactorEnabled, sessionTimeout } = payload;
+  const { sessionTimeout } = payload;
+  const unknownKeys = Object.keys(payload || {}).filter(
+    (key) => key !== "sessionTimeout"
+  );
 
-  if (twoFactorEnabled !== undefined) {
-    if (typeof twoFactorEnabled !== "boolean") {
-      return "twoFactorEnabled must be boolean";
-    }
-    settings.security.twoFactorEnabled = twoFactorEnabled;
+  if (unknownKeys.length > 0) {
+    return `Unknown security setting keys: ${unknownKeys.join(", ")}`;
   }
 
   if (sessionTimeout !== undefined) {
