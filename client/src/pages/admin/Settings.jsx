@@ -10,19 +10,6 @@ const defaultSettings = {
     primaryColor: "#e50914",
     accentColor: "#1f2937",
   },
-  dashboard: {
-    layout: "grid",
-    itemsPerPage: 10,
-    showSummary: true,
-  },
-  theater: {
-    defaultCity: "",
-    defaultLanguage: "English",
-    defaultFormat: "2D",
-    standardPrice: 200,
-    premiumPrice: 350,
-    vipPrice: 500,
-  },
   pricing: {
     currency: "INR",
     taxPercentage: 18,
@@ -45,8 +32,6 @@ const defaultSettings = {
 
 const tabs = [
   { key: "theme", label: "Theme" },
-  { key: "dashboard", label: "Dashboard" },
-  { key: "theater", label: "Theater" },
   { key: "pricing", label: "Pricing" },
   { key: "notifications", label: "Notifications" },
   { key: "security", label: "Security" },
@@ -60,8 +45,6 @@ const Settings = () => {
     userId,
     fetchAdminSettings,
     updateAdminThemeSettings,
-    updateAdminDashboardSettings,
-    updateAdminTheaterSettings,
     updateAdminPricingSettings,
     updateAdminNotificationSettings,
     updateAdminSecuritySettings,
@@ -94,11 +77,6 @@ const Settings = () => {
       if (settings) {
         setForm({
           theme: { ...defaultSettings.theme, ...(settings.theme || {}) },
-          dashboard: {
-            ...defaultSettings.dashboard,
-            ...(settings.dashboard || {}),
-          },
-          theater: { ...defaultSettings.theater, ...(settings.theater || {}) },
           pricing: { ...defaultSettings.pricing, ...(settings.pricing || {}) },
           notifications: {
             ...defaultSettings.notifications,
@@ -138,12 +116,6 @@ const Settings = () => {
     if (activeTab === "theme") {
       result = await updateAdminThemeSettings({ mode: form.theme.mode }, userId);
     }
-    if (activeTab === "dashboard") {
-      result = await updateAdminDashboardSettings(form.dashboard, userId);
-    }
-    if (activeTab === "theater") {
-      result = await updateAdminTheaterSettings(form.theater, userId);
-    }
     if (activeTab === "pricing") {
       result = await updateAdminPricingSettings(form.pricing, userId);
     }
@@ -173,8 +145,6 @@ const Settings = () => {
     if (next) {
       setForm({
         theme: { ...defaultSettings.theme, ...(next.theme || {}) },
-        dashboard: { ...defaultSettings.dashboard, ...(next.dashboard || {}) },
-        theater: { ...defaultSettings.theater, ...(next.theater || {}) },
         pricing: { ...defaultSettings.pricing, ...(next.pricing || {}) },
         notifications: {
           ...defaultSettings.notifications,
@@ -234,140 +204,6 @@ const Settings = () => {
             <div className="md:col-span-2 p-3 rounded-lg bg-neutral-900 border border-neutral-700 text-sm text-gray-400">
               Theme mode switches full app appearance between dark and light.
               Brand colors stay unchanged.
-            </div>
-          </div>
-        )}
-
-        {activeTab === "dashboard" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <div>
-              <p className="text-sm text-gray-400 mb-2">Layout</p>
-              <select
-                value={form.dashboard.layout}
-                onChange={(e) =>
-                  updateSection("dashboard", "layout", e.target.value)
-                }
-                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white"
-              >
-                <option value="grid">Grid</option>
-                <option value="list">List</option>
-              </select>
-            </div>
-            <div>
-              <p className="text-sm text-gray-400 mb-2">Items Per Page</p>
-              <input
-                type="number"
-                min="1"
-                max="100"
-                value={form.dashboard.itemsPerPage}
-                onChange={(e) =>
-                  updateSection(
-                    "dashboard",
-                    "itemsPerPage",
-                    Number(e.target.value || 1)
-                  )
-                }
-                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white"
-              />
-            </div>
-            <label className="flex items-center gap-2 text-gray-300">
-              <input
-                type="checkbox"
-                checked={form.dashboard.showSummary}
-                onChange={(e) =>
-                  updateSection("dashboard", "showSummary", e.target.checked)
-                }
-              />
-              Show summary cards
-            </label>
-          </div>
-        )}
-
-        {activeTab === "theater" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <div>
-              <p className="text-sm text-gray-400 mb-2">Default City</p>
-              <input
-                type="text"
-                value={form.theater.defaultCity}
-                onChange={(e) =>
-                  updateSection("theater", "defaultCity", e.target.value)
-                }
-                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white"
-              />
-            </div>
-            <div>
-              <p className="text-sm text-gray-400 mb-2">Default Language</p>
-              <input
-                type="text"
-                value={form.theater.defaultLanguage}
-                onChange={(e) =>
-                  updateSection("theater", "defaultLanguage", e.target.value)
-                }
-                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white"
-              />
-            </div>
-            <div>
-              <p className="text-sm text-gray-400 mb-2">Default Format</p>
-              <select
-                value={form.theater.defaultFormat}
-                onChange={(e) =>
-                  updateSection("theater", "defaultFormat", e.target.value)
-                }
-                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white"
-              >
-                <option value="2D">2D</option>
-                <option value="3D">3D</option>
-                <option value="IMAX">IMAX</option>
-              </select>
-            </div>
-            <div>
-              <p className="text-sm text-gray-400 mb-2">Standard Price</p>
-              <input
-                type="number"
-                min="0"
-                value={form.theater.standardPrice}
-                onChange={(e) =>
-                  updateSection(
-                    "theater",
-                    "standardPrice",
-                    Number(e.target.value || 0)
-                  )
-                }
-                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white"
-              />
-            </div>
-            <div>
-              <p className="text-sm text-gray-400 mb-2">Premium Price</p>
-              <input
-                type="number"
-                min="0"
-                value={form.theater.premiumPrice}
-                onChange={(e) =>
-                  updateSection(
-                    "theater",
-                    "premiumPrice",
-                    Number(e.target.value || 0)
-                  )
-                }
-                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white"
-              />
-            </div>
-            <div>
-              <p className="text-sm text-gray-400 mb-2">VIP Price</p>
-              <input
-                type="number"
-                min="0"
-                value={form.theater.vipPrice}
-                onChange={(e) =>
-                  updateSection(
-                    "theater",
-                    "vipPrice",
-                    Number(e.target.value || 0)
-                  )
-                }
-                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white"
-              />
             </div>
           </div>
         )}
