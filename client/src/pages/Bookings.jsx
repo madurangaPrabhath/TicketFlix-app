@@ -14,10 +14,12 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
+import { useAppContext } from "../context/AppContext";
 
 const Bookings = () => {
   const navigate = useNavigate();
   const { userId } = useAuth();
+  const { formatPrice } = useAppContext();
   const [bookings, setBookings] = useState([]);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
@@ -83,7 +85,7 @@ const Bookings = () => {
         date: booking.showDate,
         time: booking.showTime,
         seats: booking.seats || [],
-        totalPrice: `$${booking.totalPrice?.toFixed(2) || "0.00"}`,
+        totalPrice: Number(booking.totalPrice || 0),
         status: booking.bookingStatus || "confirmed",
         paymentStatus: booking.paymentStatus || "pending",
         bookingDate: booking.createdAt,
@@ -332,7 +334,7 @@ const Bookings = () => {
               
               <div class="price-section">
                 <div class="price-label">Total Amount Paid</div>
-                <div class="price-value">${booking.totalPrice}</div>
+                <div class="price-value">${formatPrice(booking.totalPrice)}</div>
               </div>
             </div>
             
@@ -365,7 +367,7 @@ const Bookings = () => {
       booking.date
     )} at ${booking.time}\n🎭 ${
       booking.theater
-    }\n💺 Seats: ${booking.seats.join(", ")}\n💵 ${booking.totalPrice}`;
+    }\n💺 Seats: ${booking.seats.join(", ")}\n💵 ${formatPrice(booking.totalPrice)}`;
 
     if (navigator.share) {
       navigator
@@ -575,7 +577,7 @@ const Bookings = () => {
                               Total Price
                             </p>
                             <p className="text-green-400 font-bold text-xl sm:text-2xl">
-                              {booking.totalPrice}
+                              {formatPrice(booking.totalPrice)}
                             </p>
                           </div>
                         </div>

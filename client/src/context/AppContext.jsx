@@ -30,6 +30,12 @@ export const AppContextProvider = ({ children }) => {
     return stored === "light" || stored === "dark" ? stored : "dark";
   });
 
+  const [pricingSettings, setPricingSettings] = useState({
+    currency: "INR",
+    taxPercentage: 18,
+    convenienceFee: 0,
+  });
+
   const [movies, setMovies] = useState([]);
   const [shows, setShows] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
@@ -71,6 +77,10 @@ export const AppContextProvider = ({ children }) => {
     localStorage.setItem("ticketflix-theme-mode", mode);
   }, [themeMode]);
 
+  useEffect(() => {
+    fetchPublicPricingSettings();
+  }, []);
+
   const handleError = (error, message = "An error occurred") => {
     console.error(message, error);
     setError(message);
@@ -80,6 +90,43 @@ export const AppContextProvider = ({ children }) => {
   const handleSuccess = (message) => {
     setSuccess(message);
     setTimeout(() => setSuccess(null), 5000);
+  };
+
+  const formatPrice = (amount, options = {}) => {
+    const numeric = Number(amount || 0);
+    const normalized = Number.isFinite(numeric) ? numeric : 0;
+    const currencyCode = (pricingSettings?.currency || "INR").toUpperCase();
+
+    try {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: currencyCode,
+        minimumFractionDigits: options.minimumFractionDigits ?? 2,
+        maximumFractionDigits: options.maximumFractionDigits ?? 2,
+      }).format(normalized);
+    } catch (error) {
+      return `${currencyCode} ${normalized.toFixed(2)}`;
+    }
+  };
+
+  const fetchPublicPricingSettings = async () => {
+    try {
+      const response = await axiosInstance.get("/settings/public/pricing");
+      const data = response.data?.data;
+
+      if (data) {
+        setPricingSettings({
+          currency: data.currency || "INR",
+          taxPercentage: Number(data.taxPercentage ?? 18),
+          convenienceFee: Number(data.convenienceFee ?? 0),
+        });
+      }
+
+      return data || null;
+    } catch (err) {
+      console.error("Failed to fetch public pricing settings", err);
+      return null;
+    }
   };
 
   useEffect(() => {
@@ -901,6 +948,13 @@ export const AppContextProvider = ({ children }) => {
       if (settings?.theme?.mode) {
         setThemeMode(settings.theme.mode === "light" ? "light" : "dark");
       }
+      if (settings?.pricing) {
+        setPricingSettings({
+          currency: settings.pricing.currency || "INR",
+          taxPercentage: Number(settings.pricing.taxPercentage ?? 18),
+          convenienceFee: Number(settings.pricing.convenienceFee ?? 0),
+        });
+      }
       return settings;
     } catch (err) {
       handleError(err, "Failed to fetch admin settings");
@@ -989,7 +1043,15 @@ export const AppContextProvider = ({ children }) => {
         pricingData
       );
       handleSuccess("Pricing settings updated");
-      return response.data?.data || null;
+      const nextPricing = response.data?.data || null;
+      if (nextPricing) {
+        setPricingSettings({
+          currency: nextPricing.currency || "INR",
+          taxPercentage: Number(nextPricing.taxPercentage ?? 18),
+          convenienceFee: Number(nextPricing.convenienceFee ?? 0),
+        });
+      }
+      return nextPricing;
     } catch (err) {
       handleError(err, "Failed to update pricing settings");
       return null;
@@ -1043,6 +1105,13 @@ export const AppContextProvider = ({ children }) => {
       if (nextSettings?.theme?.mode) {
         setThemeMode(nextSettings.theme.mode === "light" ? "light" : "dark");
       }
+      if (nextSettings?.pricing) {
+        setPricingSettings({
+          currency: nextSettings.pricing.currency || "INR",
+          taxPercentage: Number(nextSettings.pricing.taxPercentage ?? 18),
+          convenienceFee: Number(nextSettings.pricing.convenienceFee ?? 0),
+        });
+      }
       return nextSettings;
     } catch (err) {
       handleError(err, "Failed to reset settings");
@@ -1060,6 +1129,8 @@ export const AppContextProvider = ({ children }) => {
     success,
     themeMode,
     setThemeMode,
+    pricingSettings,
+    formatPrice,
 
     user,
     userProfile,
@@ -1153,6 +1224,7 @@ export const AppContextProvider = ({ children }) => {
     fetchAdminProfile,
     updateAdminProfile,
     fetchAdminPermissions,
+    fetchPublicPricingSettings,
     fetchAdminSettings,
     updateAdminSettings,
     updateAdminThemeSettings,

@@ -5,7 +5,7 @@ import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 
 const ListShows = () => {
-  const { fetchAdminShows, updateShow, deleteShow } = useAppContext();
+  const { fetchAdminShows, updateShow, deleteShow, formatPrice } = useAppContext();
   const [shows, setShows] = React.useState([]);
   const [filteredShows, setFilteredShows] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -203,7 +203,9 @@ const ListShows = () => {
                     {formatDateTime(show.showDate, show.showTime)}
                   </td>
                   <td className="p-2 md:p-3 lg:p-4 text-green-400 font-semibold text-xs sm:text-sm">
-                    ${show.pricing?.standard || show.showPrice || "N/A"}
+                    {Number.isFinite(Number(show.pricing?.standard || show.showPrice))
+                      ? formatPrice(show.pricing?.standard || show.showPrice)
+                      : "N/A"}
                   </td>
                   <td className="p-2 md:p-3 lg:p-4 text-gray-300 hidden md:table-cell">
                     <div className="text-xs sm:text-sm">

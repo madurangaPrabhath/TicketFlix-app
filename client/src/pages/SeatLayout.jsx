@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 import { ArrowRight, Clock, Check, Calendar } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
+import { useAppContext } from "../context/AppContext";
 
 const SeatLayout = () => {
   const { id, date } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { pricingSettings, formatPrice } = useAppContext();
 
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [selectedTime, setSelectedTime] = useState(null);
@@ -233,14 +235,16 @@ const SeatLayout = () => {
       subtotal += price;
     });
 
-    const convenienceFee = selectedSeats.length * 1.5;
-    const total = subtotal + convenienceFee;
+    const taxAmount = subtotal * (Number(pricingSettings?.taxPercentage || 0) / 100);
+    const convenienceFee = Number(pricingSettings?.convenienceFee || 0);
+    const total = subtotal + taxAmount + convenienceFee;
 
     return {
       standardSeats,
       premiumSeats,
       vipSeats,
       subtotal,
+      taxAmount,
       convenienceFee,
       total,
     };
@@ -515,13 +519,12 @@ const SeatLayout = () => {
                           Standard × {pricing.standardSeats}
                         </span>
                         <span className="text-white font-semibold">
-                          $
-                          {(
+                          {formatPrice(
                             pricing.standardSeats *
-                            (availableTimes.find(
+                              (availableTimes.find(
                               (item) => item.showTime === selectedTime,
-                            )?.pricing?.standard || 0)
-                          ).toFixed(2)}
+                              )?.pricing?.standard || 0)
+                          )}
                         </span>
                       </div>
                     )}
@@ -531,13 +534,12 @@ const SeatLayout = () => {
                           Premium × {pricing.premiumSeats}
                         </span>
                         <span className="text-white font-semibold">
-                          $
-                          {(
+                          {formatPrice(
                             pricing.premiumSeats *
-                            (availableTimes.find(
+                              (availableTimes.find(
                               (item) => item.showTime === selectedTime,
-                            )?.pricing?.premium || 0)
-                          ).toFixed(2)}
+                              )?.pricing?.premium || 0)
+                          )}
                         </span>
                       </div>
                     )}
@@ -547,20 +549,27 @@ const SeatLayout = () => {
                           VIP × {pricing.vipSeats}
                         </span>
                         <span className="text-white font-semibold">
-                          $
-                          {(
+                          {formatPrice(
                             pricing.vipSeats *
-                            (availableTimes.find(
+                              (availableTimes.find(
                               (item) => item.showTime === selectedTime,
-                            )?.pricing?.vip || 0)
-                          ).toFixed(2)}
+                              )?.pricing?.vip || 0)
+                          )}
                         </span>
                       </div>
                     )}
                     <div className="flex justify-between text-xs sm:text-sm">
+                      <span className="text-gray-400">
+                        Tax ({Number(pricingSettings?.taxPercentage || 0)}%)
+                      </span>
+                      <span className="text-white font-semibold">
+                        {formatPrice(pricing.taxAmount)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs sm:text-sm">
                       <span className="text-gray-400">Convenience Fee</span>
                       <span className="text-white font-semibold">
-                        ${pricing.convenienceFee.toFixed(2)}
+                        {formatPrice(pricing.convenienceFee)}
                       </span>
                     </div>
                   </>
@@ -576,7 +585,7 @@ const SeatLayout = () => {
                   Total
                 </span>
                 <span className="text-green-400 font-bold text-lg sm:text-xl">
-                  ${pricing.total.toFixed(2)}
+                  {formatPrice(pricing.total)}
                 </span>
               </div>
 

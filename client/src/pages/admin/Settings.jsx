@@ -37,6 +37,8 @@ const tabs = [
   { key: "security", label: "Security" },
 ];
 
+const supportedCurrencies = ["INR", "USD", "EUR", "GBP", "AED", "CAD", "LKR"];
+
 const Settings = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -212,14 +214,19 @@ const Settings = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div>
               <p className="text-sm text-gray-400 mb-2">Currency</p>
-              <input
-                type="text"
+              <select
                 value={form.pricing.currency}
                 onChange={(e) =>
                   updateSection("pricing", "currency", e.target.value)
                 }
                 className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white"
-              />
+              >
+                {supportedCurrencies.map((code) => (
+                  <option key={code} value={code}>
+                    {code}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <p className="text-sm text-gray-400 mb-2">Tax Percentage</p>

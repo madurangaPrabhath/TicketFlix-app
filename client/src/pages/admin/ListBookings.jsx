@@ -5,7 +5,7 @@ import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 
 const ListBookings = () => {
-  const { fetchAdminBookings, cancelBooking } = useAppContext();
+  const { fetchAdminBookings, cancelBooking, formatPrice } = useAppContext();
   const [bookings, setBookings] = useState([]);
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,7 +77,7 @@ Theater: ${theaterInfo}
 Show Date: ${formatDateTime(booking.showDate, booking.showTime)}
 
 Seats: ${booking.seats?.join(", ") || "N/A"}
-Total Amount: $${booking.totalPrice}
+Total Amount: ${formatPrice(booking.totalPrice)}
 Payment Status: ${booking.paymentStatus}
 Booking Status: ${booking.bookingStatus}
 
@@ -281,7 +281,7 @@ Thank you for your booking!
                     </div>
                   </td>
                   <td className="p-2 md:p-3 lg:p-4 text-green-400 font-bold text-xs sm:text-sm whitespace-nowrap">
-                    ${booking.totalPrice || 0}
+                    {formatPrice(booking.totalPrice || 0)}
                   </td>
                   <td className="p-2 md:p-3 lg:p-4">
                     <div className="flex items-center gap-1 md:gap-2 whitespace-nowrap">
@@ -360,15 +360,13 @@ Thank you for your booking!
         <div className="bg-neutral-900 rounded-lg p-4 md:p-6 border border-neutral-700">
           <p className="text-gray-400 text-xs md:text-sm">Total Revenue</p>
           <p className="text-2xl md:text-3xl font-bold text-yellow-400 mt-2">
-            $
-            {bookings
-              .reduce(
+            {formatPrice(
+              bookings.reduce(
                 (sum, b) =>
-                  sum +
-                  (b.paymentStatus === "completed" ? b.totalPrice || 0 : 0),
-                0,
+                  sum + (b.paymentStatus === "completed" ? b.totalPrice || 0 : 0),
+                0
               )
-              .toFixed(2)}
+            )}
           </p>
         </div>
       </div>

@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 const Dashboard = () => {
-  const { fetchAdminDashboard, fetchAdminShows, deleteShow } = useAppContext();
+  const { fetchAdminDashboard, fetchAdminShows, deleteShow, formatPrice } = useAppContext();
   const [dashboardData, setDashboardData] = useState({
     totalBookings: 0,
     totalRevenue: 0,
@@ -46,14 +46,14 @@ const Dashboard = () => {
     },
     {
       title: "Daily Revenue",
-      value: `$${dashboardData.dailyRevenue?.toFixed(2) || "0.00"}`,
+      value: formatPrice(dashboardData.dailyRevenue || 0),
       icon: TrendingUp,
       color: "text-orange-500",
       bgColor: "bg-orange-500/20",
     },
     {
       title: "Monthly Revenue",
-      value: `$${dashboardData.monthlyRevenue?.toFixed(2) || "0.00"}`,
+      value: formatPrice(dashboardData.monthlyRevenue || 0),
       icon: DollarSign,
       color: "text-green-500",
       bgColor: "bg-green-500/20",
@@ -228,7 +228,11 @@ const Dashboard = () => {
                     <div className="flex items-center gap-1">
                       <DollarSign className="w-4 h-4 text-green-500 flex-shrink-0" />
                       <span className="text-green-500 font-semibold">
-                        ${show.pricing?.standard || show.showPrice || "N/A"}
+                        {Number.isFinite(
+                          Number(show.pricing?.standard || show.showPrice)
+                        )
+                          ? formatPrice(show.pricing?.standard || show.showPrice)
+                          : "N/A"}
                       </span>
                     </div>
                     <div className="flex items-center gap-1">

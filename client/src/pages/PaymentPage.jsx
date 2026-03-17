@@ -21,12 +21,13 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
+import { useAppContext } from "../context/AppContext";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 const API_BASE_URL = "http://localhost:3000/api";
 
-const PaymentForm = ({ bookingData, onSuccess, onCancel }) => {
+const PaymentForm = ({ bookingData, onSuccess, onCancel, formatPrice }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -126,7 +127,7 @@ const PaymentForm = ({ bookingData, onSuccess, onCancel }) => {
           ) : (
             <>
               <Lock className="w-5 h-5" />
-              Pay ${bookingData.totalPrice?.toFixed(2)}
+              Pay {formatPrice(bookingData.totalPrice)}
             </>
           )}
         </button>
@@ -139,6 +140,7 @@ const PaymentPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { userId } = useAuth();
+  const { formatPrice } = useAppContext();
 
   const [clientSecret, setClientSecret] = useState("");
   const [bookingData, setBookingData] = useState(null);
@@ -395,7 +397,7 @@ const PaymentPage = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">Total Amount</span>
                     <span className="text-2xl font-bold text-green-400">
-                      ${bookingData?.totalPrice?.toFixed(2)}
+                      {formatPrice(bookingData?.totalPrice)}
                     </span>
                   </div>
                 </div>
@@ -410,6 +412,7 @@ const PaymentPage = () => {
                   bookingData={bookingData}
                   onSuccess={handlePaymentSuccess}
                   onCancel={handleCancel}
+                  formatPrice={formatPrice}
                 />
               </Elements>
             )}

@@ -1,9 +1,33 @@
 import Stripe from "stripe";
 import Booking from "../models/Booking.js";
 import Show from "../models/Show.js";
+import AdminSettings from "../models/AdminSettings.js";
 import { createNotificationForUser } from "../utils/notificationService.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const SUPPORTED_STRIPE_CURRENCIES = new Set([
+  "inr",
+  "usd",
+  "eur",
+  "gbp",
+  "aed",
+  "cad",
+  "lkr",
+]);
+
+const getConfiguredStripeCurrency = async () => {
+  const settings = await AdminSettings.findOne(
+    {},
+    { pricing: 1, _id: 0 },
+    { sort: { updatedAt: -1 } }
+  );
+
+  const candidate = settings?.pricing?.currency
+    ? String(settings.pricing.currency).toLowerCase()
+    : "inr";
+
+  return SUPPORTED_STRIPE_CURRENCIES.has(candidate) ? candidate : "inr";
+};
 
 export const createPaymentIntent = async (req, res) => {
   try {
@@ -44,9 +68,11 @@ export const createPaymentIntent = async (req, res) => {
       });
     }
 
+    const stripeCurrency = await getConfiguredStripeCurrency();
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(totalPrice * 100),
-      currency: "usd",
+      currency: stripeCurrency,
       metadata: {
         userId,
         movieId: movieId.toString(),

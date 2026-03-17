@@ -7,6 +7,7 @@ import {
   deleteNotification,
   deleteAllNotifications,
   createNotification,
+  getPublicPricingSettings,
   getAdminSettings,
   updateAdminSettings,
   updateThemeSettings,
@@ -33,6 +34,8 @@ settingsRouter.put(
 settingsRouter.delete("/notifications/:notificationId", deleteNotification);
 settingsRouter.delete("/notifications/:userId/all", deleteAllNotifications);
 settingsRouter.post("/notifications", createNotification);
+
+settingsRouter.get("/public/pricing", getPublicPricingSettings);
 
 settingsRouter.get("/admin/:userId", getAdminSettings);
 settingsRouter.put("/admin/:userId", updateAdminSettings);

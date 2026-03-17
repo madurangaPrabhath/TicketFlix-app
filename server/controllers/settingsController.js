@@ -6,6 +6,7 @@ const NOTIFICATION_SEVERITIES = ["info", "warning", "success", "error"];
 const THEME_MODES = ["light", "dark"];
 const DASHBOARD_LAYOUTS = ["grid", "list"];
 const SHOW_FORMATS = ["2D", "3D", "IMAX"];
+const SUPPORTED_CURRENCIES = ["INR", "USD", "EUR", "GBP", "AED", "CAD", "LKR"];
 
 const getAuthUserId = (req) => req.auth?.userId || null;
 
@@ -164,10 +165,16 @@ const applyPricingUpdates = (settings, payload = {}) => {
   const { currency, taxPercentage, convenienceFee } = payload;
 
   if (currency !== undefined) {
-    if (typeof currency !== "string" || currency.trim().length < 2) {
-      return "currency must be a string (e.g. INR, USD)";
+    if (typeof currency !== "string") {
+      return "currency must be a valid currency code";
     }
-    settings.pricing.currency = currency.trim().toUpperCase();
+
+    const normalized = currency.trim().toUpperCase();
+    if (!SUPPORTED_CURRENCIES.includes(normalized)) {
+      return `currency must be one of: ${SUPPORTED_CURRENCIES.join(", ")}`;
+    }
+
+    settings.pricing.currency = normalized;
   }
 
   if (taxPercentage !== undefined) {
@@ -270,6 +277,33 @@ export const getNotifications = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch notifications",
+      error: error.message,
+    });
+  }
+};
+
+export const getPublicPricingSettings = async (req, res) => {
+  try {
+    const settings = await AdminSettings.findOne(
+      {},
+      { pricing: 1, _id: 0 },
+      { sort: { updatedAt: -1 } }
+    );
+
+    const pricing = settings?.pricing || {
+      currency: "INR",
+      taxPercentage: 18,
+      convenienceFee: 0,
+    };
+
+    res.status(200).json({
+      success: true,
+      data: pricing,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch pricing settings",
       error: error.message,
     });
   }
