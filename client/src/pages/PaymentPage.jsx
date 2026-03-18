@@ -130,6 +130,32 @@ const walletDetails = [
   },
 ];
 
+const localBankMethods = [
+  {
+    id: "bank-transfer",
+    label: "Bank Transfer",
+    description: "Transfer from your bank app or internet banking",
+  },
+  {
+    id: "cash-deposit",
+    label: "Cash Deposit",
+    description: "Deposit at any branch and upload your slip",
+  },
+  {
+    id: "mobile-banking",
+    label: "Mobile Banking",
+    description: "Use local mobile banking apps and share reference",
+  },
+];
+
+const transferAccountDetails = {
+  accountName: "TicketFlix Private Limited",
+  bankName: "Commercial Bank",
+  branch: "Colombo Main",
+  accountNumber: "842991001237",
+  swiftCode: "CCEYLKLX",
+};
+
 const PaymentForm = ({
   bookingData,
   onSuccess,
@@ -141,6 +167,9 @@ const PaymentForm = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedMethod, setSelectedMethod] = useState("card");
+  const [selectedBankMethod, setSelectedBankMethod] = useState("bank-transfer");
+  const [bankTransferRef, setBankTransferRef] = useState("");
+  const [slipFileName, setSlipFileName] = useState("");
 
   const isLikelyApplePayReady =
     typeof window !== "undefined" &&
@@ -245,6 +274,25 @@ const PaymentForm = ({
     }
   };
 
+  const handleSlipFileChange = (event) => {
+    const file = event.target.files?.[0];
+    setSlipFileName(file?.name || "");
+  };
+
+  const handleBankTransferSubmit = () => {
+    if (!bankTransferRef.trim()) {
+      toast.error("Please enter transaction/reference number");
+      return;
+    }
+
+    if (!slipFileName) {
+      toast.error("Please upload payment slip");
+      return;
+    }
+
+    toast.success("Bank payment slip submitted. We will verify shortly.");
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="bg-neutral-900 p-6 rounded-lg border border-neutral-700">
@@ -316,6 +364,98 @@ const PaymentForm = ({
               />
             </div>
           </div>
+        ) : selectedMethod === "bank" ? (
+          <div className="space-y-4">
+            <div className="rounded-lg border border-neutral-700 bg-neutral-950/60 p-3">
+              <p className="text-sm text-white font-medium mb-1">Bank / Local Payment</p>
+              <p className="text-xs text-gray-400">
+                Only bank and local transfer instructions are shown here. Card fields are hidden.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {localBankMethods.map((method) => (
+                <button
+                  key={method.id}
+                  type="button"
+                  onClick={() => setSelectedBankMethod(method.id)}
+                  className={`rounded-lg border px-3 py-2 text-left transition-colors ${
+                    selectedBankMethod === method.id
+                      ? "border-emerald-500 bg-emerald-500/10"
+                      : "border-neutral-700 bg-neutral-950/60 hover:border-neutral-600"
+                  }`}
+                >
+                  <p className="text-sm text-white font-medium">{method.label}</p>
+                  <p className="text-xs text-gray-400 mt-1">{method.description}</p>
+                </button>
+              ))}
+            </div>
+
+            <div className="rounded-lg border border-neutral-700 bg-neutral-950/60 p-4 space-y-3">
+              <p className="text-sm font-semibold text-white">Transfer Account Details</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-gray-400">Account Name</p>
+                  <p className="text-white">{transferAccountDetails.accountName}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400">Bank Name</p>
+                  <p className="text-white">{transferAccountDetails.bankName}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400">Branch</p>
+                  <p className="text-white">{transferAccountDetails.branch}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400">SWIFT Code</p>
+                  <p className="text-white">{transferAccountDetails.swiftCode}</p>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-emerald-700/40 bg-emerald-500/10 px-3 py-2">
+                <p className="text-xs text-emerald-300">Account Number</p>
+                <p className="text-lg font-bold tracking-wide text-emerald-200">
+                  {transferAccountDetails.accountNumber}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-neutral-700 bg-neutral-950/60 p-4 space-y-3">
+              <p className="text-sm font-semibold text-white">Upload Payment Slip</p>
+
+              <div>
+                <p className="text-xs text-gray-400 mb-1">Transaction / Reference Number</p>
+                <input
+                  type="text"
+                  value={bankTransferRef}
+                  onChange={(e) => setBankTransferRef(e.target.value)}
+                  placeholder="e.g. TXN45820319"
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white"
+                />
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-400 mb-1">Payment Slip (jpg/png/pdf)</p>
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.pdf"
+                  onChange={handleSlipFileChange}
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white text-sm"
+                />
+                {slipFileName && (
+                  <p className="text-xs text-emerald-400 mt-1">Selected: {slipFileName}</p>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleBankTransferSubmit}
+                className="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium"
+              >
+                Submit Slip for Verification
+              </button>
+            </div>
+          </div>
         ) : (
           <PaymentElement
             key={selectedMethod}
@@ -384,7 +524,7 @@ const PaymentForm = ({
         >
           Cancel
         </button>
-        {selectedMethod !== "wallets" ? (
+        {selectedMethod !== "wallets" && selectedMethod !== "bank" ? (
           <button
             type="submit"
             disabled={!stripe || isProcessing}
@@ -404,7 +544,9 @@ const PaymentForm = ({
           </button>
         ) : (
           <div className="flex-1 px-4 py-3 rounded-lg border border-emerald-700/50 bg-emerald-500/10 text-emerald-300 text-sm flex items-center justify-center">
-            Use wallet button above to complete payment
+            {selectedMethod === "wallets"
+              ? "Use wallet button above to complete payment"
+              : "Use bank/local section above to submit payment slip"}
           </div>
         )}
       </div>
