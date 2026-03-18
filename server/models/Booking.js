@@ -44,6 +44,32 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    paymentMethodCategory: {
+      type: String,
+      enum: ["unknown", "card", "wallet", "bank_local"],
+      default: "unknown",
+    },
+    paymentMethod: {
+      type: String,
+      default: null,
+    },
+    paymentVerificationStatus: {
+      type: String,
+      enum: ["not_required", "pending_review", "verified", "rejected"],
+      default: "not_required",
+    },
+    bankTransferReference: {
+      type: String,
+      default: null,
+    },
+    bankTransferMethod: {
+      type: String,
+      default: null,
+    },
+    bankTransferSubmittedAt: {
+      type: Date,
+      default: null,
+    },
     bookingDate: {
       type: Date,
       default: Date.now,

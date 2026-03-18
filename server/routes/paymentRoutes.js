@@ -5,6 +5,8 @@ import {
   cancelPayment,
   refundPayment,
   getPaymentStatus,
+  submitBankTransferReference,
+  reviewBankTransferPayment,
   webhookHandler,
 } from "../controllers/paymentController.js";
 
@@ -18,6 +20,8 @@ paymentRoutes.post(
 
 paymentRoutes.post("/create-payment-intent", createPaymentIntent);
 paymentRoutes.post("/confirm-payment", confirmPayment);
+paymentRoutes.post("/bank-transfer/submit", submitBankTransferReference);
+paymentRoutes.post("/bank-transfer/review/:bookingId", reviewBankTransferPayment);
 paymentRoutes.post("/cancel/:bookingId", cancelPayment);
 paymentRoutes.post("/refund/:bookingId", refundPayment);
 paymentRoutes.get("/status/:paymentIntentId", getPaymentStatus);

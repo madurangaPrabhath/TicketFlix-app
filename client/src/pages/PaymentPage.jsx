@@ -121,7 +121,9 @@ const transferAccountDetails = {
 
 const PaymentForm = ({
   bookingData,
+  userId,
   onSuccess,
+  onBankSubmitted,
   onCancel,
   formatPrice,
 }) => {
@@ -235,13 +237,39 @@ const PaymentForm = ({
     }
   };
 
-  const handleBankTransferSubmit = () => {
+  const handleBankTransferSubmit = async () => {
     if (!bankTransferRef.trim()) {
       toast.error("Please enter transaction/reference number");
       return;
     }
 
-    toast.success("Bank transfer reference submitted. We will verify shortly.");
+    try {
+      setIsProcessing(true);
+      setErrorMessage("");
+
+      const res = await axios.post(`${API_BASE_URL}/payments/bank-transfer/submit`, {
+        bookingId: bookingData.bookingId,
+        userId,
+        referenceNumber: bankTransferRef,
+        bankMethod: "bank_transfer",
+      });
+
+      if (res.data?.success) {
+        toast.success("Bank transfer reference submitted. We will verify shortly.");
+        onBankSubmitted?.();
+        return;
+      }
+
+      toast.error("Failed to submit transfer reference");
+      setIsProcessing(false);
+    } catch (error) {
+      console.error("Error submitting bank transfer reference:", error);
+      setErrorMessage(
+        error.response?.data?.message || "Failed to submit transfer reference"
+      );
+      toast.error(error.response?.data?.message || "Failed to submit transfer reference");
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -574,6 +602,12 @@ const PaymentPage = () => {
     }, 2500);
   };
 
+  const handleBankSubmitted = () => {
+    setTimeout(() => {
+      navigate("/booking", { replace: true });
+    }, 900);
+  };
+
   const handleCancel = async () => {
     if (bookingData?.bookingId) {
       try {
@@ -741,7 +775,9 @@ const PaymentPage = () => {
               <Elements stripe={stripePromise} options={options}>
                 <PaymentForm
                   bookingData={bookingData}
+                  userId={userId}
                   onSuccess={handlePaymentSuccess}
+                  onBankSubmitted={handleBankSubmitted}
                   onCancel={handleCancel}
                   formatPrice={formatPrice}
                 />

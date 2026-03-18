@@ -29,6 +29,58 @@ const getConfiguredStripeCurrency = async () => {
   return SUPPORTED_STRIPE_CURRENCIES.has(candidate) ? candidate : "inr";
 };
 
+const resolvePaymentMethodMeta = (paymentIntent) => {
+  const chargeDetails = paymentIntent?.latest_charge?.payment_method_details;
+  const chargeType = chargeDetails?.type;
+  const walletType = chargeDetails?.card?.wallet?.type;
+
+  if (walletType) {
+    return {
+      category: "wallet",
+      method: walletType,
+    };
+  }
+
+  const primaryType =
+    chargeType || paymentIntent?.payment_method_types?.[0] || "card";
+
+  if (["link", "paypal"].includes(primaryType)) {
+    return {
+      category: "wallet",
+      method: primaryType,
+    };
+  }
+
+  if (["sepa_debit", "ideal", "bank_transfer"].includes(primaryType)) {
+    return {
+      category: "bank_local",
+      method: primaryType,
+    };
+  }
+
+  return {
+    category: "card",
+    method: primaryType,
+  };
+};
+
+const confirmBookingSeats = async (booking) => {
+  const show = await Show.findById(booking.showId);
+  if (!show) {
+    return;
+  }
+
+  const seatsToAdd = booking.seats.filter(
+    (seat) => !show.seats.booked.includes(seat)
+  );
+
+  if (seatsToAdd.length > 0) {
+    show.seats.booked.push(...seatsToAdd);
+    show.seats.available = Math.max(0, show.seats.total - show.seats.booked.length);
+    await show.save();
+  }
+};
+
 export const createPaymentIntent = async (req, res) => {
   try {
     const {
@@ -105,6 +157,8 @@ export const createPaymentIntent = async (req, res) => {
       theater: show.theater,
       movieDetails: movieDetails || show.movieDetails,
       bookingStatus: "pending",
+      paymentMethodCategory: "unknown",
+      paymentVerificationStatus: "not_required",
     });
 
     await booking.save();
@@ -136,7 +190,9 @@ export const confirmPayment = async (req, res) => {
       });
     }
 
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
+      expand: ["latest_charge"],
+    });
 
     if (paymentIntent.status !== "succeeded") {
       return res.status(400).json({
@@ -156,26 +212,17 @@ export const confirmPayment = async (req, res) => {
     }
 
     const wasCompleted = booking.paymentStatus === "completed";
+    const paymentMeta = resolvePaymentMethodMeta(paymentIntent);
+
     booking.paymentStatus = "completed";
     booking.bookingStatus = "confirmed";
     booking.paymentId = paymentIntentId;
+    booking.paymentMethodCategory = paymentMeta.category;
+    booking.paymentMethod = paymentMeta.method;
+    booking.paymentVerificationStatus = "not_required";
     await booking.save();
 
-    const show = await Show.findById(booking.showId);
-    if (show) {
-      const seatsToAdd = booking.seats.filter(
-        (seat) => !show.seats.booked.includes(seat),
-      );
-
-      if (seatsToAdd.length > 0) {
-        show.seats.booked.push(...seatsToAdd);
-        show.seats.available = Math.max(
-          0,
-          show.seats.total - show.seats.booked.length,
-        );
-        await show.save();
-      }
-    }
+    await confirmBookingSeats(booking);
 
     if (!wasCompleted) {
       await createNotificationForUser({
@@ -200,6 +247,175 @@ export const confirmPayment = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error confirming payment",
+      error: error.message,
+    });
+  }
+};
+
+export const submitBankTransferReference = async (req, res) => {
+  try {
+    const { bookingId, userId, referenceNumber, bankMethod } = req.body;
+
+    if (!bookingId || !referenceNumber) {
+      return res.status(400).json({
+        success: false,
+        message: "bookingId and referenceNumber are required",
+      });
+    }
+
+    const booking = await Booking.findById(bookingId);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    if (userId && booking.userId !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to update this booking",
+      });
+    }
+
+    if (booking.paymentStatus === "completed") {
+      return res.status(400).json({
+        success: false,
+        message: "Booking is already paid",
+      });
+    }
+
+    if (booking.paymentId) {
+      try {
+        const paymentIntent = await stripe.paymentIntents.retrieve(booking.paymentId);
+        if (
+          paymentIntent.status !== "succeeded" &&
+          paymentIntent.status !== "canceled"
+        ) {
+          await stripe.paymentIntents.cancel(booking.paymentId);
+        }
+      } catch (error) {
+        console.error("Error canceling stale payment intent:", error.message);
+      }
+    }
+
+    booking.paymentStatus = "pending";
+    booking.bookingStatus = "pending";
+    booking.paymentMethodCategory = "bank_local";
+    booking.paymentMethod = "manual_bank_transfer";
+    booking.paymentVerificationStatus = "pending_review";
+    booking.bankTransferReference = String(referenceNumber).trim();
+    booking.bankTransferMethod = bankMethod
+      ? String(bankMethod).trim().toLowerCase()
+      : "bank_transfer";
+    booking.bankTransferSubmittedAt = new Date();
+
+    await booking.save();
+
+    await createNotificationForUser({
+      userId: booking.userId,
+      type: "booking",
+      title: "Bank transfer submitted",
+      message: `${booking.movieDetails?.title || "Your booking"} bank transfer reference has been submitted and is pending verification.`,
+      icon: "ticket",
+      actionUrl: "/booking",
+      actionLabel: "View booking",
+      severity: "info",
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Bank transfer reference submitted successfully",
+      data: booking,
+    });
+  } catch (error) {
+    console.error("Error submitting bank transfer reference:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error submitting bank transfer reference",
+      error: error.message,
+    });
+  }
+};
+
+export const reviewBankTransferPayment = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const { status, notes } = req.body;
+
+    if (!bookingId || !status) {
+      return res.status(400).json({
+        success: false,
+        message: "bookingId and status are required",
+      });
+    }
+
+    if (!["verified", "rejected"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "status must be either verified or rejected",
+      });
+    }
+
+    const booking = await Booking.findById(bookingId);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    booking.paymentVerificationStatus = status;
+    booking.notes = notes || booking.notes;
+
+    if (status === "verified") {
+      booking.paymentStatus = "completed";
+      booking.bookingStatus = "confirmed";
+      await booking.save();
+      await confirmBookingSeats(booking);
+
+      await createNotificationForUser({
+        userId: booking.userId,
+        type: "booking",
+        title: "Bank transfer verified",
+        message: `${booking.movieDetails?.title || "Your booking"} payment has been verified and seats are confirmed.`,
+        icon: "ticket",
+        actionUrl: "/booking",
+        actionLabel: "View ticket",
+        severity: "success",
+      });
+    } else {
+      booking.paymentStatus = "failed";
+      booking.bookingStatus = "cancelled";
+      await booking.save();
+
+      await createNotificationForUser({
+        userId: booking.userId,
+        type: "booking",
+        title: "Bank transfer rejected",
+        message: `${booking.movieDetails?.title || "Your booking"} payment verification was rejected. Please retry payment.`,
+        icon: "alert",
+        actionUrl: "/payment",
+        actionLabel: "Retry payment",
+        severity: "error",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message:
+        status === "verified"
+          ? "Bank transfer verified successfully"
+          : "Bank transfer rejected successfully",
+      data: booking,
+    });
+  } catch (error) {
+    console.error("Error reviewing bank transfer:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error reviewing bank transfer",
       error: error.message,
     });
   }
@@ -383,16 +599,16 @@ export const webhookHandler = async (req, res) => {
 
       if (booking) {
         const wasCompleted = booking.paymentStatus === "completed";
+        const paymentMeta = resolvePaymentMethodMeta(paymentIntent);
+
         booking.paymentStatus = "completed";
         booking.bookingStatus = "confirmed";
+        booking.paymentMethodCategory = paymentMeta.category;
+        booking.paymentMethod = paymentMeta.method;
+        booking.paymentVerificationStatus = "not_required";
         await booking.save();
 
-        const show = await Show.findById(booking.showId);
-        if (show && !show.seats.booked.some((s) => booking.seats.includes(s))) {
-          show.seats.booked.push(...booking.seats);
-          show.seats.available -= booking.seats.length;
-          await show.save();
-        }
+        await confirmBookingSeats(booking);
 
         if (!wasCompleted) {
           await createNotificationForUser({
@@ -420,6 +636,7 @@ export const webhookHandler = async (req, res) => {
       if (failedBooking) {
         failedBooking.paymentStatus = "failed";
         failedBooking.bookingStatus = "cancelled";
+        failedBooking.paymentVerificationStatus = "not_required";
         await failedBooking.save();
 
         await createNotificationForUser({
