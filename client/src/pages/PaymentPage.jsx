@@ -5,6 +5,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
   PaymentElement,
+  ExpressCheckoutElement,
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
@@ -108,6 +109,27 @@ const paymentMethodHighlights = [
   },
 ];
 
+const walletDetails = [
+  {
+    id: "apple-pay",
+    title: "Apple Pay",
+    description: "Fast checkout on Safari/iPhone/Mac with an eligible saved card.",
+    supportHint: "Requires Apple Pay enabled device and Stripe domain verification.",
+  },
+  {
+    id: "google-pay",
+    title: "Google Pay",
+    description: "One-tap checkout on Chrome/Android with supported cards.",
+    supportHint: "Works best on secure origins (https) or localhost in development.",
+  },
+  {
+    id: "link",
+    title: "Link",
+    description: "Stripe Link autofills payment details for faster repeat checkout.",
+    supportHint: "Available when Link is enabled for your Stripe account and region.",
+  },
+];
+
 const PaymentForm = ({
   bookingData,
   onSuccess,
@@ -119,6 +141,16 @@ const PaymentForm = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedMethod, setSelectedMethod] = useState("card");
+
+  const isLikelyApplePayReady =
+    typeof window !== "undefined" &&
+    typeof window.ApplePaySession !== "undefined" &&
+    window.ApplePaySession.canMakePayments();
+
+  const isLikelyGooglePayReady =
+    typeof window !== "undefined" &&
+    /Chrome|CriOS/i.test(window.navigator.userAgent || "") &&
+    (window.location.protocol === "https:" || window.location.hostname === "localhost");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -166,6 +198,53 @@ const PaymentForm = ({
     }
   };
 
+  const handleWalletConfirm = async (event) => {
+    event.preventDefault();
+
+    if (!stripe || !elements) {
+      return;
+    }
+
+    setIsProcessing(true);
+    setErrorMessage("");
+
+    try {
+      const paymentResult = await stripe.confirmPayment({
+        elements,
+        redirect: "if_required",
+      });
+
+      const error = paymentResult.error;
+      const paymentIntent = paymentResult.paymentIntent;
+
+      if (error) {
+        setErrorMessage(error.message || "Wallet payment failed");
+        toast.error(error.message || "Wallet payment failed");
+        setIsProcessing(false);
+        return;
+      }
+
+      if (paymentIntent?.status === "succeeded") {
+        await axios.post(`${API_BASE_URL}/payments/confirm-payment`, {
+          paymentIntentId: paymentIntent.id,
+          bookingId: bookingData.bookingId,
+        });
+
+        toast.success("Payment successful! Your booking is confirmed.");
+        onSuccess(paymentIntent);
+        return;
+      }
+
+      setErrorMessage("Payment was not successful. Please try again.");
+      setIsProcessing(false);
+    } catch (error) {
+      console.error("Wallet payment error:", error);
+      setErrorMessage(error.response?.data?.message || "Wallet payment failed");
+      toast.error("Wallet payment failed. Please try again.");
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="bg-neutral-900 p-6 rounded-lg border border-neutral-700">
@@ -202,14 +281,82 @@ const PaymentForm = ({
           })}
         </div>
 
-        <PaymentElement
-          key={selectedMethod}
-          options={{
-            layout: "tabs",
-            paymentMethodOrder:
-              methodOrderBySelection[selectedMethod] || methodOrderBySelection.card,
-          }}
-        />
+        {selectedMethod === "wallets" ? (
+          <div className="space-y-3">
+            <div className="rounded-lg border border-neutral-700 bg-neutral-950/60 p-3">
+              <p className="text-sm text-white font-medium mb-1">Wallet Checkout</p>
+              <p className="text-xs text-gray-400">
+                Only wallet methods are shown below. Use Apple Pay, Google Pay,
+                Link, or other available wallet options.
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-neutral-700 bg-neutral-950/60 p-3">
+              <ExpressCheckoutElement
+                onConfirm={handleWalletConfirm}
+                options={{
+                  paymentMethods: {
+                    applePay: "always",
+                    googlePay: "always",
+                    link: "auto",
+                    paypal: "auto",
+                  },
+                  buttonTheme: {
+                    applePay: "white-outline",
+                    googlePay: "black",
+                    paypal: "gold",
+                    link: "default",
+                  },
+                  buttonType: {
+                    applePay: "buy",
+                    googlePay: "buy",
+                    paypal: "checkout",
+                  },
+                }}
+              />
+            </div>
+          </div>
+        ) : (
+          <PaymentElement
+            key={selectedMethod}
+            options={{
+              layout: "tabs",
+              paymentMethodOrder:
+                methodOrderBySelection[selectedMethod] || methodOrderBySelection.card,
+            }}
+          />
+        )}
+
+        {selectedMethod === "wallets" && (
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {walletDetails.map((wallet) => {
+              const isApplePay = wallet.id === "apple-pay";
+              const isGooglePay = wallet.id === "google-pay";
+
+              const readinessText = isApplePay
+                ? isLikelyApplePayReady
+                  ? "Likely available on this device"
+                  : "May not be available on this device/browser"
+                : isGooglePay
+                ? isLikelyGooglePayReady
+                  ? "Likely available on this browser"
+                  : "May require Chrome/Android or secure origin"
+                : "Availability depends on Stripe account setup";
+
+              return (
+                <div
+                  key={wallet.id}
+                  className="rounded-lg border border-neutral-700 bg-neutral-950/60 p-3"
+                >
+                  <p className="text-sm font-semibold text-white">{wallet.title}</p>
+                  <p className="text-xs text-gray-300 mt-1">{wallet.description}</p>
+                  <p className="text-xs text-gray-500 mt-2">{wallet.supportHint}</p>
+                  <p className="text-xs text-emerald-400 mt-2">{readinessText}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <p className="text-xs text-gray-500">
@@ -237,23 +384,29 @@ const PaymentForm = ({
         >
           Cancel
         </button>
-        <button
-          type="submit"
-          disabled={!stripe || isProcessing}
-          className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          {isProcessing ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Processing...
-            </>
-          ) : (
-            <>
-              <Lock className="w-5 h-5" />
-              {selectedMethod === "card" ? "Pay with Card" : "Continue Payment"} {formatPrice(bookingData.totalPrice)}
-            </>
-          )}
-        </button>
+        {selectedMethod !== "wallets" ? (
+          <button
+            type="submit"
+            disabled={!stripe || isProcessing}
+            className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <Lock className="w-5 h-5" />
+                {selectedMethod === "card" ? "Pay with Card" : "Continue Payment"} {formatPrice(bookingData.totalPrice)}
+              </>
+            )}
+          </button>
+        ) : (
+          <div className="flex-1 px-4 py-3 rounded-lg border border-emerald-700/50 bg-emerald-500/10 text-emerald-300 text-sm flex items-center justify-center">
+            Use wallet button above to complete payment
+          </div>
+        )}
       </div>
     </form>
   );
