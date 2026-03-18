@@ -11,6 +11,9 @@ import {
 import {
   CreditCard,
   Lock,
+  Wallet,
+  Smartphone,
+  Landmark,
   Calendar,
   Clock,
   MapPin,
@@ -27,11 +30,95 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 const API_BASE_URL = "http://localhost:3000/api";
 
-const PaymentForm = ({ bookingData, onSuccess, onCancel, formatPrice }) => {
+const methodOrderBySelection = {
+  card: [
+    "card",
+    "link",
+    "apple_pay",
+    "google_pay",
+    "paypal",
+    "klarna",
+    "affirm",
+    "afterpay_clearpay",
+    "sepa_debit",
+    "ideal",
+  ],
+  wallets: [
+    "link",
+    "apple_pay",
+    "google_pay",
+    "card",
+    "paypal",
+    "klarna",
+    "affirm",
+    "afterpay_clearpay",
+    "sepa_debit",
+    "ideal",
+  ],
+  bank: [
+    "sepa_debit",
+    "ideal",
+    "card",
+    "link",
+    "apple_pay",
+    "google_pay",
+    "paypal",
+    "klarna",
+    "affirm",
+    "afterpay_clearpay",
+  ],
+  paylater: [
+    "klarna",
+    "affirm",
+    "afterpay_clearpay",
+    "card",
+    "link",
+    "apple_pay",
+    "google_pay",
+    "paypal",
+    "sepa_debit",
+    "ideal",
+  ],
+};
+
+const paymentMethodHighlights = [
+  {
+    id: "card",
+    label: "Cards",
+    description: "Visa, Mastercard, Amex",
+    icon: CreditCard,
+  },
+  {
+    id: "wallets",
+    label: "Wallets",
+    description: "Apple Pay, Google Pay, Link",
+    icon: Smartphone,
+  },
+  {
+    id: "bank",
+    label: "Bank / Local",
+    description: "Supported local payment rails",
+    icon: Landmark,
+  },
+  {
+    id: "paylater",
+    label: "Pay Later",
+    description: "BNPL methods when eligible",
+    icon: Wallet,
+  },
+];
+
+const PaymentForm = ({
+  bookingData,
+  onSuccess,
+  onCancel,
+  formatPrice,
+}) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [selectedMethod, setSelectedMethod] = useState("card");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,10 +131,13 @@ const PaymentForm = ({ bookingData, onSuccess, onCancel, formatPrice }) => {
     setErrorMessage("");
 
     try {
-      const { error, paymentIntent } = await stripe.confirmPayment({
+      const paymentResult = await stripe.confirmPayment({
         elements,
         redirect: "if_required",
       });
+
+      const error = paymentResult.error;
+      const paymentIntent = paymentResult.paymentIntent;
 
       if (error) {
         setErrorMessage(error.message);
@@ -86,14 +176,38 @@ const PaymentForm = ({ bookingData, onSuccess, onCancel, formatPrice }) => {
           <h3 className="text-lg font-semibold text-white">Payment Details</h3>
         </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+          {paymentMethodHighlights.map((method) => {
+            const Icon = method.icon;
+            const isActive = selectedMethod === method.id;
+
+            return (
+              <button
+                type="button"
+                key={method.id}
+                onClick={() => setSelectedMethod(method.id)}
+                className={`rounded-lg border px-3 py-2 text-left transition-colors ${
+                  isActive
+                    ? "border-emerald-500 bg-emerald-500/10"
+                    : "border-neutral-700 bg-neutral-950/60 hover:border-neutral-600"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Icon className="w-4 h-4 text-emerald-400" />
+                  <p className="text-sm text-white font-medium">{method.label}</p>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">{method.description}</p>
+              </button>
+            );
+          })}
+        </div>
+
         <PaymentElement
+          key={selectedMethod}
           options={{
             layout: "tabs",
-            defaultValues: {
-              billingDetails: {
-                name: "",
-              },
-            },
+            paymentMethodOrder:
+              methodOrderBySelection[selectedMethod] || methodOrderBySelection.card,
           }}
         />
       </div>
@@ -136,7 +250,7 @@ const PaymentForm = ({ bookingData, onSuccess, onCancel, formatPrice }) => {
           ) : (
             <>
               <Lock className="w-5 h-5" />
-              Pay {formatPrice(bookingData.totalPrice)}
+              {selectedMethod === "card" ? "Pay with Card" : "Continue Payment"} {formatPrice(bookingData.totalPrice)}
             </>
           )}
         </button>
