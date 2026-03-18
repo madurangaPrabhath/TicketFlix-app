@@ -73,6 +73,9 @@ export const createPaymentIntent = async (req, res) => {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(totalPrice * 100),
       currency: stripeCurrency,
+      automatic_payment_methods: {
+        enabled: true,
+      },
       metadata: {
         userId,
         movieId: movieId.toString(),

@@ -89,10 +89,19 @@ const PaymentForm = ({ bookingData, onSuccess, onCancel, formatPrice }) => {
         <PaymentElement
           options={{
             layout: "tabs",
-            paymentMethodOrder: ["card"],
+            defaultValues: {
+              billingDetails: {
+                name: "",
+              },
+            },
           }}
         />
       </div>
+
+      <p className="text-xs text-gray-500">
+        Available methods depend on your country, currency, and Stripe account
+        settings.
+      </p>
 
       {errorMessage && (
         <div className="bg-red-600/20 border border-red-600 rounded-lg p-4">

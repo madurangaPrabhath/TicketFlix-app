@@ -6,6 +6,7 @@ import {
   Clock,
   MapPin,
   Ticket,
+  CreditCard,
   Download,
   Share2,
   CheckCircle,
@@ -386,15 +387,15 @@ const Bookings = () => {
 
   const handleCancelBooking = async (bookingId, booking) => {
     try {
-      const confirmDelete = window.confirm(
-        "Are you sure you want to delete this booking? This action cannot be undone."
+      const confirmCancel = window.confirm(
+        "Are you sure you want to cancel this booking?"
       );
 
-      if (!confirmDelete) {
+      if (!confirmCancel) {
         return;
       }
 
-      console.log("Deleting booking:", bookingId);
+      console.log("Cancelling booking:", bookingId);
 
       if (booking.paymentStatus === "completed") {
         await axios.post(`${API_BASE_URL}/payments/refund/${bookingId}`, {
@@ -404,36 +405,100 @@ const Bookings = () => {
         toast.success(
           "Refund processed successfully! Amount will be credited in 5-10 business days."
         );
+
+        setBookings((prev) =>
+          prev.map((item) =>
+            item.id === bookingId
+              ? {
+                  ...item,
+                  status: "cancelled",
+                  paymentStatus: "refunded",
+                }
+              : item
+          )
+        );
+
+        return;
       }
 
       await axios.delete(`${API_BASE_URL}/bookings/${bookingId}`);
-      toast.success("Booking deleted successfully!");
-      setBookings(bookings.filter((b) => b.id !== bookingId));
+      toast.success("Booking cancelled successfully!");
+      setBookings((prev) =>
+        prev.map((item) =>
+          item.id === bookingId
+            ? {
+                ...item,
+                status: "cancelled",
+                paymentStatus:
+                  item.paymentStatus === "completed"
+                    ? "refunded"
+                    : item.paymentStatus,
+              }
+            : item
+        )
+      );
     } catch (error) {
-      console.error("Error deleting booking:", error);
-      toast.error(error.response?.data?.message || "Failed to delete booking");
+      console.error("Error cancelling booking:", error);
+      toast.error(error.response?.data?.message || "Failed to cancel booking");
     }
   };
 
-  const handleDeleteBooking = async (bookingId) => {
+  const handleDeleteBooking = async (booking) => {
     try {
+      const isPendingBooking =
+        booking.status === "pending" || booking.paymentStatus === "pending";
+
       const confirmDelete = window.confirm(
-        "Are you sure you want to delete this booking? This action cannot be undone."
+        isPendingBooking
+          ? "Are you sure you want to delete this pending booking?"
+          : "Are you sure you want to delete this booking? This action cannot be undone."
       );
 
       if (!confirmDelete) {
         return;
       }
 
-      console.log("Deleting booking:", bookingId);
-      await axios.delete(`${API_BASE_URL}/bookings/${bookingId}`);
+      console.log("Deleting booking:", booking.id);
+
+      if (isPendingBooking) {
+        await axios.post(`${API_BASE_URL}/payments/cancel/${booking.id}`);
+      } else {
+        await axios.delete(`${API_BASE_URL}/bookings/${booking.id}`);
+      }
 
       toast.success("Booking deleted successfully!");
 
-      setBookings(bookings.filter((b) => b.id !== bookingId));
+      setBookings((prev) => prev.filter((item) => item.id !== booking.id));
     } catch (error) {
       console.error("Error deleting booking:", error);
       toast.error(error.response?.data?.message || "Failed to delete booking");
+    }
+  };
+
+  const handlePayNow = async (booking) => {
+    try {
+      // Remove stale pending booking before creating a fresh payment intent.
+      await axios.post(`${API_BASE_URL}/payments/cancel/${booking.id}`);
+
+      setBookings((prev) => prev.filter((item) => item.id !== booking.id));
+
+      navigate("/payment", {
+        state: {
+          movie: {
+            id: booking.movieId,
+            title: booking.movieTitle,
+            poster_path: booking.moviePoster,
+          },
+          showId: booking.showId,
+          seats: booking.seats,
+          totalPrice: booking.totalPrice,
+          date: booking.date,
+          time: booking.time,
+        },
+      });
+    } catch (error) {
+      console.error("Error preparing payment:", error);
+      toast.error(error.response?.data?.message || "Unable to continue payment");
     }
   };
 
@@ -657,6 +722,17 @@ const Bookings = () => {
                         <span className="hidden sm:inline">Share</span>
                       </button>
 
+                      {(booking.status === "pending" ||
+                        booking.paymentStatus === "pending") && (
+                        <button
+                          onClick={() => handlePayNow(booking)}
+                          className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95"
+                        >
+                          <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          <span className="hidden sm:inline">Pay Now</span>
+                        </button>
+                      )}
+
                       {(booking.status === "confirmed" ||
                         booking.status === "cancelled") && (
                         <button
@@ -671,7 +747,7 @@ const Bookings = () => {
                       )}
 
                       <button
-                        onClick={() => handleDeleteBooking(booking.id)}
+                        onClick={() => handleDeleteBooking(booking)}
                         className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/50 active:scale-95"
                       >
                         <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
