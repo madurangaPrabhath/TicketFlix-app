@@ -12,7 +12,6 @@ import {
 import {
   CreditCard,
   Lock,
-  Wallet,
   Smartphone,
   Landmark,
   Calendar,
@@ -68,18 +67,6 @@ const methodOrderBySelection = {
     "affirm",
     "afterpay_clearpay",
   ],
-  paylater: [
-    "klarna",
-    "affirm",
-    "afterpay_clearpay",
-    "card",
-    "link",
-    "apple_pay",
-    "google_pay",
-    "paypal",
-    "sepa_debit",
-    "ideal",
-  ],
 };
 
 const paymentMethodHighlights = [
@@ -100,12 +87,6 @@ const paymentMethodHighlights = [
     label: "Bank / Local",
     description: "Supported local payment rails",
     icon: Landmark,
-  },
-  {
-    id: "paylater",
-    label: "Pay Later",
-    description: "BNPL methods when eligible",
-    icon: Wallet,
   },
 ];
 
@@ -130,24 +111,6 @@ const walletDetails = [
   },
 ];
 
-const localBankMethods = [
-  {
-    id: "bank-transfer",
-    label: "Bank Transfer",
-    description: "Transfer from your bank app or internet banking",
-  },
-  {
-    id: "cash-deposit",
-    label: "Cash Deposit",
-    description: "Deposit at any branch and upload your slip",
-  },
-  {
-    id: "mobile-banking",
-    label: "Mobile Banking",
-    description: "Use local mobile banking apps and share reference",
-  },
-];
-
 const transferAccountDetails = {
   accountName: "TicketFlix Private Limited",
   bankName: "Commercial Bank",
@@ -167,9 +130,7 @@ const PaymentForm = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedMethod, setSelectedMethod] = useState("card");
-  const [selectedBankMethod, setSelectedBankMethod] = useState("bank-transfer");
   const [bankTransferRef, setBankTransferRef] = useState("");
-  const [slipFileName, setSlipFileName] = useState("");
 
   const isLikelyApplePayReady =
     typeof window !== "undefined" &&
@@ -274,23 +235,13 @@ const PaymentForm = ({
     }
   };
 
-  const handleSlipFileChange = (event) => {
-    const file = event.target.files?.[0];
-    setSlipFileName(file?.name || "");
-  };
-
   const handleBankTransferSubmit = () => {
     if (!bankTransferRef.trim()) {
       toast.error("Please enter transaction/reference number");
       return;
     }
 
-    if (!slipFileName) {
-      toast.error("Please upload payment slip");
-      return;
-    }
-
-    toast.success("Bank payment slip submitted. We will verify shortly.");
+    toast.success("Bank transfer reference submitted. We will verify shortly.");
   };
 
   return (
@@ -303,7 +254,7 @@ const PaymentForm = ({
           <h3 className="text-lg font-semibold text-white">Payment Details</h3>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
           {paymentMethodHighlights.map((method) => {
             const Icon = method.icon;
             const isActive = selectedMethod === method.id;
@@ -366,31 +317,6 @@ const PaymentForm = ({
           </div>
         ) : selectedMethod === "bank" ? (
           <div className="space-y-4">
-            <div className="rounded-lg border border-neutral-700 bg-neutral-950/60 p-3">
-              <p className="text-sm text-white font-medium mb-1">Bank / Local Payment</p>
-              <p className="text-xs text-gray-400">
-                Only bank and local transfer instructions are shown here. Card fields are hidden.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {localBankMethods.map((method) => (
-                <button
-                  key={method.id}
-                  type="button"
-                  onClick={() => setSelectedBankMethod(method.id)}
-                  className={`rounded-lg border px-3 py-2 text-left transition-colors ${
-                    selectedBankMethod === method.id
-                      ? "border-emerald-500 bg-emerald-500/10"
-                      : "border-neutral-700 bg-neutral-950/60 hover:border-neutral-600"
-                  }`}
-                >
-                  <p className="text-sm text-white font-medium">{method.label}</p>
-                  <p className="text-xs text-gray-400 mt-1">{method.description}</p>
-                </button>
-              ))}
-            </div>
-
             <div className="rounded-lg border border-neutral-700 bg-neutral-950/60 p-4 space-y-3">
               <p className="text-sm font-semibold text-white">Transfer Account Details</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
@@ -421,7 +347,7 @@ const PaymentForm = ({
             </div>
 
             <div className="rounded-lg border border-neutral-700 bg-neutral-950/60 p-4 space-y-3">
-              <p className="text-sm font-semibold text-white">Upload Payment Slip</p>
+              <p className="text-sm font-semibold text-white">Submit Transfer Reference</p>
 
               <div>
                 <p className="text-xs text-gray-400 mb-1">Transaction / Reference Number</p>
@@ -434,25 +360,12 @@ const PaymentForm = ({
                 />
               </div>
 
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Payment Slip (jpg/png/pdf)</p>
-                <input
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.pdf"
-                  onChange={handleSlipFileChange}
-                  className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-2 text-white text-sm"
-                />
-                {slipFileName && (
-                  <p className="text-xs text-emerald-400 mt-1">Selected: {slipFileName}</p>
-                )}
-              </div>
-
               <button
                 type="button"
                 onClick={handleBankTransferSubmit}
                 className="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium"
               >
-                Submit Slip for Verification
+                Submit Reference for Verification
               </button>
             </div>
           </div>
@@ -546,7 +459,7 @@ const PaymentForm = ({
           <div className="flex-1 px-4 py-3 rounded-lg border border-emerald-700/50 bg-emerald-500/10 text-emerald-300 text-sm flex items-center justify-center">
             {selectedMethod === "wallets"
               ? "Use wallet button above to complete payment"
-              : "Use bank/local section above to submit payment slip"}
+              : "Use bank/local section above to submit transfer reference"}
           </div>
         )}
       </div>
