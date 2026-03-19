@@ -20,6 +20,23 @@ export const getDashboardStats = async (req, res) => {
       bookingDate: { $gte: today, $lt: tomorrowStart },
     });
 
+    const dailyRevenueData = await Booking.aggregate([
+      {
+        $match: {
+          bookingDate: { $gte: today, $lt: tomorrowStart },
+          paymentStatus: "completed",
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$totalPrice" },
+        },
+      },
+    ]);
+
+    const dailyRevenue = dailyRevenueData[0]?.total || 0;
+
     const monthStart = new Date();
     monthStart.setDate(1);
     monthStart.setHours(0, 0, 0, 0);
@@ -50,6 +67,7 @@ export const getDashboardStats = async (req, res) => {
         totalBookings,
         totalUsers,
         todayBookings,
+        dailyRevenue,
         monthlyRevenue,
         activeShows,
         completedShows,
