@@ -307,10 +307,18 @@ export const deleteCancelledBooking = async (req, res) => {
       });
     }
 
-    if (String(booking.bookingStatus || "").toLowerCase() !== "cancelled") {
+    const bookingStatus = String(booking.bookingStatus || "").toLowerCase();
+    const paymentStatus = String(booking.paymentStatus || "").toLowerCase();
+
+    const isCancelledBooking = bookingStatus === "cancelled";
+    const isUnpaidPendingBooking =
+      bookingStatus === "pending" && paymentStatus === "pending";
+
+    if (!isCancelledBooking && !isUnpaidPendingBooking) {
       return res.status(400).json({
         success: false,
-        message: "Only cancelled bookings can be deleted permanently",
+        message:
+          "Only cancelled bookings or unpaid pending bookings can be deleted permanently",
       });
     }
 
@@ -329,8 +337,8 @@ export const deleteCancelledBooking = async (req, res) => {
     await createNotificationForUser({
       userId: booking.userId,
       type: "booking",
-      title: "Cancelled booking deleted",
-      message: `${booking.movieDetails?.title || "Your booking"} cancelled booking has been deleted permanently.`,
+      title: "Booking deleted",
+      message: `${booking.movieDetails?.title || "Your booking"} has been deleted permanently.`,
       icon: "trash",
       actionUrl: "/booking",
       actionLabel: "View bookings",
@@ -339,7 +347,7 @@ export const deleteCancelledBooking = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Cancelled booking deleted permanently",
+      message: "Booking deleted permanently",
     });
   } catch (error) {
     res.status(500).json({

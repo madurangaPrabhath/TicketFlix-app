@@ -405,15 +405,23 @@ export const AppContextProvider = ({ children }) => {
     }
   };
 
-  const cancelBooking = async (bookingId) => {
+  const cancelBooking = async (bookingId, options = {}) => {
+    const { permanent = false } = options;
     try {
       setLoading(true);
-      const response = await axiosInstance.delete(`/bookings/${bookingId}`);
+      const endpoint = permanent
+        ? `/bookings/${bookingId}/permanent`
+        : `/bookings/${bookingId}`;
+      const response = await axiosInstance.delete(endpoint);
       await getUserBookings(userId);
-      handleSuccess("Booking cancelled successfully!");
+      handleSuccess(
+        permanent
+          ? "Booking deleted permanently!"
+          : "Booking cancelled successfully!"
+      );
       return response.data;
     } catch (err) {
-      handleError(err, "Failed to cancel booking");
+      handleError(err, permanent ? "Failed to delete booking" : "Failed to cancel booking");
       return null;
     } finally {
       setLoading(false);

@@ -43,13 +43,22 @@ const ListBookings = () => {
   const handleDelete = async (id) => {
     try {
       console.log("Deleting booking:", id);
-      await cancelBooking(id);
+      const bookingToDelete = bookings.find((booking) => booking._id === id);
+      const isUnpaidPendingBooking =
+        bookingToDelete?.bookingStatus === "pending" &&
+        bookingToDelete?.paymentStatus === "pending";
+
+      await cancelBooking(id, { permanent: isUnpaidPendingBooking });
       setBookings(bookings.filter((booking) => booking._id !== id));
       setFilteredBookings(
         filteredBookings.filter((booking) => booking._id !== id),
       );
       setDeleteConfirm(null);
-      toast.success("Booking deleted successfully");
+      toast.success(
+        isUnpaidPendingBooking
+          ? "Booking deleted permanently"
+          : "Booking cancelled successfully",
+      );
     } catch (error) {
       console.error("Error deleting booking:", error);
       toast.error(error.response?.data?.message || "Failed to delete booking");
