@@ -20,7 +20,7 @@ const Bookings = () => {
   const { userId } = useAuth();
   const { formatPrice } = useAppContext();
   const [bookings, setBookings] = useState([]);
-  const [filter, setFilter] = useState("confirmed");
+  const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
 
@@ -90,6 +90,10 @@ const Bookings = () => {
   }, [userId]);
 
   const getFilteredBookings = () => {
+    if (filter === "all") {
+      return bookings;
+    }
+
     return bookings.filter((booking) => booking.status === filter);
   };
 
@@ -477,7 +481,7 @@ const Bookings = () => {
         </div>
 
         <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-6 border-b border-neutral-700 pb-3">
-          {["confirmed", "cancelled"].map((tab) => (
+          {["all", "confirmed", "cancelled"].map((tab) => (
             <button
               key={tab}
               onClick={() => setFilter(tab)}
@@ -487,10 +491,18 @@ const Bookings = () => {
                   : "bg-neutral-800 text-gray-400 hover:bg-neutral-700"
               }`}
             >
-              {tab === "confirmed" ? "Confirmed" : "Cancelled"}
+              {tab === "all"
+                ? "All"
+                : tab === "confirmed"
+                ? "Confirmed"
+                : "Cancelled"}
               <span className="ml-1.5 text-xs">
                 (
-                {bookings.filter((b) => b.status === tab).length}
+                {
+                  tab === "all"
+                    ? bookings.length
+                    : bookings.filter((b) => b.status === tab).length
+                }
                 )
               </span>
             </button>
@@ -647,10 +659,12 @@ const Bookings = () => {
               <Ticket className="w-8 h-8 text-gray-600" />
             </div>
             <h3 className="text-lg sm:text-xl font-bold text-white mb-1">
-              No {filter} bookings found
+              No {filter === "all" ? "" : filter} bookings found
             </h3>
             <p className="text-gray-400 mb-4 text-xs sm:text-sm">
-              {`You have no ${filter} bookings at the moment.`}
+              {filter === "all"
+                ? "You have no bookings at the moment."
+                : `You have no ${filter} bookings at the moment.`}
             </p>
             <button
               onClick={() => navigate("/movies")}
