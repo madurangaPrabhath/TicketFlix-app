@@ -16,12 +16,20 @@ const ListBookings = () => {
   const formatDateTime = (dateStr, timeStr) => {
     if (!dateStr) return "N/A";
     const date = new Date(dateStr);
-    const dateString = date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-    return timeStr ? `${dateString} at ${timeStr}` : dateString;
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = String(date.getFullYear()).slice(-2);
+    const dateString = `${day}/${month}/${year}`;
+    return timeStr ? `${dateString}, ${timeStr}` : dateString;
+  };
+
+  const formatBookingDateTime = (dateStr) => {
+    if (!dateStr) return "N/A";
+    const date = new Date(dateStr);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = String(date.getFullYear()).slice(-2);
+    return `${day}/${month}/${year}`;
   };
 
   const getAllBookings = async () => {
@@ -228,7 +236,7 @@ Thank you for your booking!
       </div>
 
       <div className="px-4 md:px-6 lg:px-8 overflow-x-auto bg-neutral-900 rounded-lg">
-        <table className="w-full text-xs sm:text-sm md:text-base min-w-[800px]">
+        <table className="w-full text-xs sm:text-sm md:text-base min-w-[760px]">
           <thead>
             <tr className="border-b border-neutral-700 bg-neutral-800">
               <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm">
@@ -237,8 +245,11 @@ Thank you for your booking!
               <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm">
                 Movie
               </th>
-              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm">
-                Show Date
+              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm w-[120px]">
+                Show
+              </th>
+              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm w-[95px]">
+                Booked
               </th>
               <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm">
                 Seats
@@ -249,7 +260,7 @@ Thank you for your booking!
               <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm">
                 Status
               </th>
-              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm w-[180px]">
+              <th className="p-2 md:p-3 lg:p-4 text-left text-gray-300 font-semibold text-xs sm:text-sm w-[160px]">
                 Actions
               </th>
             </tr>
@@ -261,16 +272,19 @@ Thank you for your booking!
                   key={booking._id || index}
                   className="border-b border-neutral-700 hover:bg-neutral-800/50 transition"
                 >
-                  <td className="p-2 md:p-3 lg:p-4 text-white font-medium text-xs sm:text-sm truncate max-w-[120px]">
+                  <td className="p-2 md:p-3 lg:p-4 text-white font-medium text-xs sm:text-sm truncate max-w-[110px]">
                     {booking.userId || "Unknown User"}
                   </td>
-                  <td className="p-2 md:p-3 lg:p-4 text-gray-300 text-xs sm:text-sm truncate max-w-[180px]">
+                  <td className="p-2 md:p-3 lg:p-4 text-gray-300 text-xs sm:text-sm truncate max-w-[150px]">
                     {booking.movieId?.title ||
                       booking.movieDetails?.title ||
                       "Unknown Movie"}
                   </td>
                   <td className="p-2 md:p-3 lg:p-4 text-gray-300 text-xs sm:text-sm whitespace-nowrap">
                     {formatDateTime(booking.showDate, booking.showTime)}
+                  </td>
+                  <td className="p-2 md:p-3 lg:p-4 text-gray-300 text-xs sm:text-sm">
+                    {formatBookingDateTime(booking.bookingDate || booking.createdAt)}
                   </td>
                   <td className="p-2 md:p-3 lg:p-4">
                     <div className="flex flex-wrap gap-0.5 md:gap-1">
@@ -342,7 +356,7 @@ Thank you for your booking!
             ) : (
               <tr>
                 <td
-                  colSpan="7"
+                  colSpan="8"
                   className="p-4 md:p-6 lg:p-8 text-center text-gray-400 text-xs sm:text-sm"
                 >
                   No bookings found matching your search.
