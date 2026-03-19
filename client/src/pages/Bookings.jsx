@@ -6,12 +6,10 @@ import {
   Clock,
   MapPin,
   Ticket,
-  CreditCard,
   Download,
   Share2,
   CheckCircle,
   AlertCircle,
-  Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
@@ -22,45 +20,11 @@ const Bookings = () => {
   const { userId } = useAuth();
   const { formatPrice } = useAppContext();
   const [bookings, setBookings] = useState([]);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState("confirmed");
   const [loading, setLoading] = useState(true);
   const [hasAttemptedLoad, setHasAttemptedLoad] = useState(false);
 
   const API_BASE_URL = "http://localhost:3000/api";
-
-  const createBooking = async (bookingData) => {
-    try {
-      setCreatingBooking(true);
-      console.log("Creating booking with data:", bookingData);
-
-      const payload = {
-        userId: userId,
-        movieId: bookingData.movie.id,
-        showId: bookingData.showId,
-        seats: bookingData.seats,
-        seatTypes: bookingData.seats.map(() => "standard"),
-        totalPrice: bookingData.totalPrice,
-        showDate: bookingData.date,
-        showTime: bookingData.time,
-      };
-
-      console.log("Booking payload:", payload);
-
-      const res = await axios.post(`${API_BASE_URL}/bookings/`, payload);
-
-      console.log("Booking created:", res.data);
-
-      if (res.data.success) {
-        toast.success("Booking created successfully!");
-        await fetchBookings(userId);
-      }
-    } catch (error) {
-      console.error("Error creating booking:", error);
-      toast.error(error.response?.data?.message || "Failed to create booking");
-    } finally {
-      setCreatingBooking(false);
-    }
-  };
 
   const fetchBookings = async (userId) => {
     try {
@@ -73,25 +37,30 @@ const Bookings = () => {
       console.log("Bookings response:", res.data);
       const bookingsData = res.data.data || [];
 
-      const formattedBookings = bookingsData.map((booking) => ({
-        id: booking._id,
-        movieId: booking.movieId,
-        showId: booking.showId,
-        movieTitle: booking.movieDetails?.title || "Unknown Movie",
-        moviePoster: booking.movieDetails?.poster_path || "/default-poster.jpg",
-        theater: booking.theater
-          ? `${booking.theater.name}, ${booking.theater.city}`
-          : "Theater Not Available",
-        theaterObject: booking.theater,
-        date: booking.showDate,
-        time: booking.showTime,
-        seats: booking.seats || [],
-        totalPrice: Number(booking.totalPrice || 0),
-        status: booking.bookingStatus || "confirmed",
-        paymentStatus: booking.paymentStatus || "pending",
-        bookingDate: booking.createdAt,
-        ticketFormat: "E-Ticket",
-      }));
+      const formattedBookings = bookingsData
+        .map((booking) => ({
+          id: booking._id,
+          movieId: booking.movieId,
+          showId: booking.showId,
+          movieTitle: booking.movieDetails?.title || "Unknown Movie",
+          moviePoster: booking.movieDetails?.poster_path || "/default-poster.jpg",
+          theater: booking.theater
+            ? `${booking.theater.name}, ${booking.theater.city}`
+            : "Theater Not Available",
+          theaterObject: booking.theater,
+          date: booking.showDate,
+          time: booking.showTime,
+          seats: booking.seats || [],
+          totalPrice: Number(booking.totalPrice || 0),
+          status: (booking.bookingStatus || "").toLowerCase(),
+          paymentStatus: (booking.paymentStatus || "").toLowerCase(),
+          bookingDate: booking.createdAt,
+          ticketFormat: "E-Ticket",
+        }))
+        .filter(
+          (booking) =>
+            booking.status === "confirmed" || booking.status === "cancelled"
+        );
 
       setBookings(formattedBookings);
       setLoading(false);
@@ -121,7 +90,6 @@ const Bookings = () => {
   }, [userId]);
 
   const getFilteredBookings = () => {
-    if (filter === "all") return bookings;
     return bookings.filter((booking) => booking.status === filter);
   };
 
@@ -443,65 +411,6 @@ const Bookings = () => {
     }
   };
 
-  const handleDeleteBooking = async (booking) => {
-    try {
-      const isPendingBooking =
-        booking.status === "pending" || booking.paymentStatus === "pending";
-
-      const confirmDelete = window.confirm(
-        isPendingBooking
-          ? "Are you sure you want to delete this pending booking?"
-          : "Are you sure you want to delete this booking? This action cannot be undone."
-      );
-
-      if (!confirmDelete) {
-        return;
-      }
-
-      console.log("Deleting booking:", booking.id);
-
-      if (isPendingBooking) {
-        await axios.post(`${API_BASE_URL}/payments/cancel/${booking.id}`);
-      } else {
-        await axios.delete(`${API_BASE_URL}/bookings/${booking.id}`);
-      }
-
-      toast.success("Booking deleted successfully!");
-
-      setBookings((prev) => prev.filter((item) => item.id !== booking.id));
-    } catch (error) {
-      console.error("Error deleting booking:", error);
-      toast.error(error.response?.data?.message || "Failed to delete booking");
-    }
-  };
-
-  const handlePayNow = async (booking) => {
-    try {
-      // Remove stale pending booking before creating a fresh payment intent.
-      await axios.post(`${API_BASE_URL}/payments/cancel/${booking.id}`);
-
-      setBookings((prev) => prev.filter((item) => item.id !== booking.id));
-
-      navigate("/payment", {
-        state: {
-          movie: {
-            id: booking.movieId,
-            title: booking.movieTitle,
-            poster_path: booking.moviePoster,
-          },
-          showId: booking.showId,
-          seats: booking.seats,
-          totalPrice: booking.totalPrice,
-          date: booking.date,
-          time: booking.time,
-        },
-      });
-    } catch (error) {
-      console.error("Error preparing payment:", error);
-      toast.error(error.response?.data?.message || "Unable to continue payment");
-    }
-  };
-
   const getStatusBadgeColor = (status) => {
     switch (status) {
       case "confirmed":
@@ -568,7 +477,7 @@ const Bookings = () => {
         </div>
 
         <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-6 border-b border-neutral-700 pb-3">
-          {["all", "confirmed", "cancelled"].map((tab) => (
+          {["confirmed", "cancelled"].map((tab) => (
             <button
               key={tab}
               onClick={() => setFilter(tab)}
@@ -578,17 +487,10 @@ const Bookings = () => {
                   : "bg-neutral-800 text-gray-400 hover:bg-neutral-700"
               }`}
             >
-              {tab === "confirmed"
-                ? "Confirmed"
-                : tab === "cancelled"
-                ? "Cancelled"
-                : "All"}
+              {tab === "confirmed" ? "Confirmed" : "Cancelled"}
               <span className="ml-1.5 text-xs">
                 (
-                {
-                  bookings.filter((b) => tab === "all" || b.status === tab)
-                    .length
-                }
+                {bookings.filter((b) => b.status === tab).length}
                 )
               </span>
             </button>
@@ -722,19 +624,7 @@ const Bookings = () => {
                         <span className="hidden sm:inline">Share</span>
                       </button>
 
-                      {(booking.status === "pending" ||
-                        booking.paymentStatus === "pending") && (
-                        <button
-                          onClick={() => handlePayNow(booking)}
-                          className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95"
-                        >
-                          <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          <span className="hidden sm:inline">Pay Now</span>
-                        </button>
-                      )}
-
-                      {(booking.status === "confirmed" ||
-                        booking.status === "cancelled") && (
+                      {booking.status === "confirmed" && (
                         <button
                           onClick={() =>
                             handleCancelBooking(booking.id, booking)
@@ -745,14 +635,6 @@ const Bookings = () => {
                           <span className="hidden sm:inline">Cancel</span>
                         </button>
                       )}
-
-                      <button
-                        onClick={() => handleDeleteBooking(booking)}
-                        className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/50 active:scale-95"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <span className="hidden sm:inline">Delete</span>
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -765,12 +647,10 @@ const Bookings = () => {
               <Ticket className="w-8 h-8 text-gray-600" />
             </div>
             <h3 className="text-lg sm:text-xl font-bold text-white mb-1">
-              No {filter !== "all" ? filter : ""} bookings found
+              No {filter} bookings found
             </h3>
             <p className="text-gray-400 mb-4 text-xs sm:text-sm">
-              {filter === "all"
-                ? "Start booking your favorite movies now!"
-                : `You have no ${filter} bookings at the moment.`}
+              {`You have no ${filter} bookings at the moment.`}
             </p>
             <button
               onClick={() => navigate("/movies")}

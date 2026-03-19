@@ -113,10 +113,15 @@ export const getUserBookings = async (req, res) => {
     }
 
     const bookings = await Booking.getUserBookings(userId);
+    const visibleBookings = bookings.filter((booking) =>
+      ["confirmed", "cancelled"].includes(
+        String(booking.bookingStatus || "").toLowerCase()
+      )
+    );
 
     res.status(200).json({
       success: true,
-      data: bookings,
+      data: visibleBookings,
     });
   } catch (error) {
     res.status(500).json({

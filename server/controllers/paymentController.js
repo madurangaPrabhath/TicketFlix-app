@@ -81,6 +81,25 @@ const confirmBookingSeats = async (booking) => {
   }
 };
 
+const markBookingAsCancelled = async (
+  booking,
+  { paymentStatus = "failed", verificationStatus = "not_required" } = {}
+) => {
+  if (!booking) {
+    return null;
+  }
+
+  booking.paymentStatus = paymentStatus;
+  booking.bookingStatus = "cancelled";
+  booking.paymentVerificationStatus = verificationStatus;
+  if (!booking.cancellationDate) {
+    booking.cancellationDate = new Date();
+  }
+
+  await booking.save();
+  return booking;
+};
+
 export const createPaymentIntent = async (req, res) => {
   try {
     const {
@@ -190,24 +209,37 @@ export const confirmPayment = async (req, res) => {
       });
     }
 
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
-      expand: ["latest_charge"],
-    });
-
-    if (paymentIntent.status !== "succeeded") {
-      return res.status(400).json({
-        success: false,
-        message: "Payment not successful",
-        status: paymentIntent.status,
-      });
-    }
-
     const booking = await Booking.findById(bookingId);
 
     if (!booking) {
       return res.status(404).json({
         success: false,
         message: "Booking not found",
+      });
+    }
+
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
+      expand: ["latest_charge"],
+    });
+
+    if (paymentIntent.status !== "succeeded") {
+      await markBookingAsCancelled(booking, { paymentStatus: "failed" });
+
+      await createNotificationForUser({
+        userId: booking.userId,
+        type: "booking",
+        title: "Payment failed",
+        message: `${booking.movieDetails?.title || "Your booking"} payment could not be completed and the booking was cancelled automatically.`,
+        icon: "alert",
+        actionUrl: "/booking",
+        actionLabel: "View bookings",
+        severity: "error",
+      });
+
+      return res.status(400).json({
+        success: false,
+        message: "Payment not successful. Booking has been cancelled.",
+        status: paymentIntent.status,
       });
     }
 
@@ -451,22 +483,27 @@ export const cancelPayment = async (req, res) => {
       }
     }
 
-    await Booking.findByIdAndDelete(bookingId);
+    await markBookingAsCancelled(booking, {
+      paymentStatus:
+        booking.paymentStatus === "completed" ? "refunded" : "failed",
+      verificationStatus: "not_required",
+    });
 
     await createNotificationForUser({
       userId: booking.userId,
       type: "booking",
       title: "Payment cancelled",
-      message: `${booking.movieDetails?.title || "Your booking"} payment was cancelled and reservation has been removed.`,
+      message: `${booking.movieDetails?.title || "Your booking"} payment was cancelled and the booking is now marked as cancelled.`,
       icon: "ticket",
-      actionUrl: "/movies",
-      actionLabel: "Book again",
+      actionUrl: "/booking",
+      actionLabel: "View bookings",
       severity: "warning",
     });
 
     res.status(200).json({
       success: true,
-      message: "Payment cancelled and booking removed",
+      message: "Payment cancelled and booking marked as cancelled",
+      data: booking,
     });
   } catch (error) {
     console.error("Error cancelling payment:", error);

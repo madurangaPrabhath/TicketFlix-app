@@ -134,6 +134,18 @@ const PaymentForm = ({
   const [selectedMethod, setSelectedMethod] = useState("card");
   const [bankTransferRef, setBankTransferRef] = useState("");
 
+  const autoCancelFailedBooking = async () => {
+    if (!bookingData?.bookingId) {
+      return;
+    }
+
+    try {
+      await axios.post(`${API_BASE_URL}/payments/cancel/${bookingData.bookingId}`);
+    } catch (cancelError) {
+      console.error("Error auto-cancelling failed booking:", cancelError);
+    }
+  };
+
   const isLikelyApplePayReady =
     typeof window !== "undefined" &&
     typeof window.ApplePaySession !== "undefined" &&
@@ -164,8 +176,9 @@ const PaymentForm = ({
       const paymentIntent = paymentResult.paymentIntent;
 
       if (error) {
+        await autoCancelFailedBooking();
         setErrorMessage(error.message);
-        toast.error(error.message);
+        toast.error(`${error.message}. Booking cancelled automatically.`);
         setIsProcessing(false);
         return;
       }
@@ -179,13 +192,16 @@ const PaymentForm = ({
         toast.success("Payment successful! Your booking is confirmed.");
         onSuccess(paymentIntent);
       } else {
+        await autoCancelFailedBooking();
         setErrorMessage("Payment was not successful. Please try again.");
+        toast.error("Payment was not successful. Booking cancelled automatically.");
         setIsProcessing(false);
       }
     } catch (error) {
       console.error("Payment error:", error);
+      await autoCancelFailedBooking();
       setErrorMessage(error.response?.data?.message || "Payment failed");
-      toast.error("Payment failed. Please try again.");
+      toast.error("Payment failed. Booking cancelled automatically.");
       setIsProcessing(false);
     }
   };
@@ -210,8 +226,11 @@ const PaymentForm = ({
       const paymentIntent = paymentResult.paymentIntent;
 
       if (error) {
+        await autoCancelFailedBooking();
         setErrorMessage(error.message || "Wallet payment failed");
-        toast.error(error.message || "Wallet payment failed");
+        toast.error(
+          `${error.message || "Wallet payment failed"}. Booking cancelled automatically.`
+        );
         setIsProcessing(false);
         return;
       }
@@ -227,12 +246,15 @@ const PaymentForm = ({
         return;
       }
 
+      await autoCancelFailedBooking();
       setErrorMessage("Payment was not successful. Please try again.");
+      toast.error("Payment was not successful. Booking cancelled automatically.");
       setIsProcessing(false);
     } catch (error) {
       console.error("Wallet payment error:", error);
+      await autoCancelFailedBooking();
       setErrorMessage(error.response?.data?.message || "Wallet payment failed");
-      toast.error("Wallet payment failed. Please try again.");
+      toast.error("Wallet payment failed. Booking cancelled automatically.");
       setIsProcessing(false);
     }
   };
