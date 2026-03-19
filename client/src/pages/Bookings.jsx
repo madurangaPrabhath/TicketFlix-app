@@ -10,6 +10,7 @@ import {
   Share2,
   CheckCircle,
   AlertCircle,
+  Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
@@ -415,6 +416,28 @@ const Bookings = () => {
     }
   };
 
+  const handleDeleteCancelledBooking = async (bookingId) => {
+    try {
+      const confirmDelete = window.confirm(
+        "Delete this cancelled booking permanently? This action cannot be undone."
+      );
+
+      if (!confirmDelete) {
+        return;
+      }
+
+      await axios.delete(`${API_BASE_URL}/bookings/${bookingId}/permanent`);
+
+      setBookings((prev) => prev.filter((item) => item.id !== bookingId));
+      toast.success("Cancelled booking deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting cancelled booking:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to delete cancelled booking"
+      );
+    }
+  };
+
   const getStatusBadgeColor = (status) => {
     switch (status) {
       case "confirmed":
@@ -645,6 +668,16 @@ const Bookings = () => {
                         >
                           <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           <span className="hidden sm:inline">Cancel</span>
+                        </button>
+                      )}
+
+                      {booking.status === "cancelled" && (
+                        <button
+                          onClick={() => handleDeleteCancelledBooking(booking.id)}
+                          className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 text-xs sm:text-sm bg-red-600 hover:bg-red-700 text-white active:scale-95"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          <span className="hidden sm:inline">Delete</span>
                         </button>
                       )}
                     </div>

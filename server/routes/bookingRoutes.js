@@ -7,6 +7,7 @@ import {
   getBookingById,
   updateBooking,
   cancelBooking,
+  deleteCancelledBooking,
   updatePaymentStatus,
   getBookingSummary,
   verifyBooking,
@@ -24,6 +25,7 @@ bookingRoutes.post("/", createBooking);
 
 bookingRoutes.put("/:bookingId", updateBooking);
 bookingRoutes.put("/:bookingId/payment", updatePaymentStatus);
+bookingRoutes.delete("/:bookingId/permanent", deleteCancelledBooking);
 
 bookingRoutes.delete("/:bookingId", cancelBooking);
 

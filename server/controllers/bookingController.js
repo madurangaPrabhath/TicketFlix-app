@@ -294,6 +294,62 @@ export const cancelBooking = async (req, res) => {
   }
 };
 
+export const deleteCancelledBooking = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+
+    const booking = await Booking.findById(bookingId);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    if (String(booking.bookingStatus || "").toLowerCase() !== "cancelled") {
+      return res.status(400).json({
+        success: false,
+        message: "Only cancelled bookings can be deleted permanently",
+      });
+    }
+
+    const show = await Show.findById(booking.showId);
+    if (show) {
+      // Ensure no cancelled booking seats remain blocked before deleting.
+      show.seats.booked = show.seats.booked.filter(
+        (seat) => !booking.seats.includes(seat)
+      );
+      show.seats.available = Math.max(0, show.seats.total - show.seats.booked.length);
+      await show.save();
+    }
+
+    await Booking.findByIdAndDelete(bookingId);
+
+    await createNotificationForUser({
+      userId: booking.userId,
+      type: "booking",
+      title: "Cancelled booking deleted",
+      message: `${booking.movieDetails?.title || "Your booking"} cancelled booking has been deleted permanently.`,
+      icon: "trash",
+      actionUrl: "/booking",
+      actionLabel: "View bookings",
+      severity: "info",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Cancelled booking deleted permanently",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error deleting cancelled booking",
+      error: error.message,
+    });
+  }
+};
+
 export const updatePaymentStatus = async (req, res) => {
   try {
     const { bookingId } = req.params;
