@@ -113,11 +113,25 @@ export const getUserBookings = async (req, res) => {
     }
 
     const bookings = await Booking.getUserBookings(userId);
-    const visibleBookings = bookings.filter((booking) =>
-      ["confirmed", "cancelled"].includes(
-        String(booking.bookingStatus || "").toLowerCase()
-      )
-    );
+    const visibleBookings = bookings.filter((booking) => {
+      const bookingStatus = String(booking.bookingStatus || "").toLowerCase();
+      const paymentMethodCategory = String(
+        booking.paymentMethodCategory || ""
+      ).toLowerCase();
+      const paymentVerificationStatus = String(
+        booking.paymentVerificationStatus || ""
+      ).toLowerCase();
+
+      const isPendingBankTransferReview =
+        bookingStatus === "pending" &&
+        paymentMethodCategory === "bank_local" &&
+        paymentVerificationStatus === "pending_review";
+
+      return (
+        ["confirmed", "cancelled"].includes(bookingStatus) ||
+        isPendingBankTransferReview
+      );
+    });
 
     res.status(200).json({
       success: true,

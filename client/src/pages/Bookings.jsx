@@ -60,7 +60,9 @@ const Bookings = () => {
         }))
         .filter(
           (booking) =>
-            booking.status === "confirmed" || booking.status === "cancelled"
+            booking.status === "confirmed" ||
+            booking.status === "cancelled" ||
+            booking.status === "pending"
         );
 
       setBookings(formattedBookings);
@@ -504,7 +506,7 @@ const Bookings = () => {
         </div>
 
         <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-4 sm:mb-6 border-b border-neutral-700 pb-3">
-          {["all", "confirmed", "cancelled"].map((tab) => (
+          {["all", "pending", "confirmed", "cancelled"].map((tab) => (
             <button
               key={tab}
               onClick={() => setFilter(tab)}
@@ -516,6 +518,8 @@ const Bookings = () => {
             >
               {tab === "all"
                 ? "All"
+                : tab === "pending"
+                ? "Pending"
                 : tab === "confirmed"
                 ? "Confirmed"
                 : "Cancelled"}
