@@ -5,13 +5,15 @@ import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 
 const ListBookings = () => {
-  const { fetchAdminBookings, cancelBooking, formatPrice } = useAppContext();
+  const { fetchAdminBookings, cancelBooking, reviewBankTransferBooking, formatPrice } =
+    useAppContext();
   const [bookings, setBookings] = useState([]);
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [acceptingBookingId, setAcceptingBookingId] = useState(null);
 
   const formatDateTime = (dateStr, timeStr) => {
     if (!dateStr) return "N/A";
@@ -70,6 +72,40 @@ const ListBookings = () => {
     } catch (error) {
       console.error("Error deleting booking:", error);
       toast.error(error.response?.data?.message || "Failed to delete booking");
+    }
+  };
+
+  const isPendingBankTransfer = (booking) =>
+    booking?.paymentMethodCategory === "bank_local" &&
+    booking?.paymentVerificationStatus === "pending_review" &&
+    booking?.paymentStatus !== "completed";
+
+  const handleAcceptBankTransfer = async (bookingId) => {
+    try {
+      setAcceptingBookingId(bookingId);
+      const updatedBooking = await reviewBankTransferBooking(bookingId, "verified");
+
+      if (!updatedBooking) {
+        toast.error("Failed to verify bank transfer");
+        return;
+      }
+
+      setBookings((prev) =>
+        prev.map((booking) =>
+          booking._id === bookingId ? { ...booking, ...updatedBooking } : booking
+        )
+      );
+      setFilteredBookings((prev) =>
+        prev.map((booking) =>
+          booking._id === bookingId ? { ...booking, ...updatedBooking } : booking
+        )
+      );
+      toast.success("Bank transfer verified successfully");
+    } catch (error) {
+      console.error("Error verifying bank transfer:", error);
+      toast.error(error.response?.data?.message || "Failed to verify bank transfer");
+    } finally {
+      setAcceptingBookingId(null);
     }
   };
 
@@ -301,6 +337,16 @@ const ListBookings = () => {
                             Paid
                           </span>
                         </>
+                      ) : isPendingBankTransfer(booking) ? (
+                        <>
+                          <Clock
+                            size={16}
+                            className="text-blue-400 flex-shrink-0"
+                          />
+                          <span className="text-blue-300 font-medium text-xs sm:text-sm">
+                            Bank Transfer Pending
+                          </span>
+                        </>
                       ) : (
                         <>
                           <Clock
@@ -316,6 +362,19 @@ const ListBookings = () => {
                   </td>
                   <td className="p-2 md:p-3 lg:p-4">
                     <div className="flex gap-2 whitespace-nowrap">
+                      {isPendingBankTransfer(booking) && (
+                        <button
+                          onClick={() => handleAcceptBankTransfer(booking._id)}
+                          disabled={acceptingBookingId === booking._id}
+                          className="bg-green-600 hover:bg-green-700 disabled:bg-green-800/70 disabled:cursor-not-allowed text-white px-2.5 py-1.5 rounded transition flex items-center gap-1.5 text-xs flex-shrink-0"
+                          title="Accept Bank Transfer"
+                        >
+                          <CheckCircle size={14} />
+                          <span>
+                            {acceptingBookingId === booking._id ? "Accepting..." : "Accept"}
+                          </span>
+                        </button>
+                      )}
                       <button
                         onClick={() => setDeleteConfirm(booking._id)}
                         className="bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded transition flex items-center gap-1.5 text-xs flex-shrink-0"

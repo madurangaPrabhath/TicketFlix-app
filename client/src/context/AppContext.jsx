@@ -840,6 +840,22 @@ export const AppContextProvider = ({ children }) => {
     }
   };
 
+  const reviewBankTransferBooking = async (bookingId, status, notes = "") => {
+    try {
+      const response = await axiosInstance.post(
+        `/payments/bank-transfer/review/${bookingId}`,
+        {
+          status,
+          notes,
+        }
+      );
+      return response.data.data;
+    } catch (err) {
+      handleError(err, "Failed to review bank transfer payment");
+      return null;
+    }
+  };
+
   const getBookingAnalytics = async () => {
     try {
       const response = await axiosInstance.get(
@@ -1219,6 +1235,7 @@ export const AppContextProvider = ({ children }) => {
     updateShow,
     deleteShow,
     fetchAdminBookings,
+    reviewBankTransferBooking,
     getBookingAnalytics,
     fetchAdminUsers,
     getAdminUserDetails,
