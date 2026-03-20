@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Trash2, Download, CheckCircle, Clock, Search } from "lucide-react";
+import { Trash2, CheckCircle, Clock, Search } from "lucide-react";
 import Title from "../../components/admin/Title";
 import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
@@ -70,54 +70,6 @@ const ListBookings = () => {
     } catch (error) {
       console.error("Error deleting booking:", error);
       toast.error(error.response?.data?.message || "Failed to delete booking");
-    }
-  };
-
-  const handleDownloadReceipt = (booking) => {
-    try {
-      const movieTitle =
-        booking.movieId?.title ||
-        booking.movieDetails?.title ||
-        "Unknown Movie";
-      const theaterInfo = booking.theater
-        ? `${booking.theater.name}, ${booking.theater.city}`
-        : "Theater info not available";
-      const receiptContent = `
-TicketFlix Booking Receipt
-========================================
-
-Booking ID: ${booking._id}
-User ID: ${booking.userId}
-
-Movie: ${movieTitle}
-Theater: ${theaterInfo}
-Show Date: ${formatDateTime(booking.showDate, booking.showTime)}
-
-Seats: ${booking.seats?.join(", ") || "N/A"}
-Total Amount: ${formatPrice(booking.totalPrice)}
-Payment Status: ${booking.paymentStatus}
-Booking Status: ${booking.bookingStatus}
-
-Booking Date: ${formatDateTime(booking.bookingDate || booking.createdAt)}
-
-========================================
-Thank you for your booking!
-      `.trim();
-
-      const element = document.createElement("a");
-      element.setAttribute(
-        "href",
-        "data:text/plain;charset=utf-8," + encodeURIComponent(receiptContent),
-      );
-      element.setAttribute("download", `receipt_${booking._id}.txt`);
-      element.style.display = "none";
-      document.body.appendChild(element);
-      element.click();
-      document.body.removeChild(element);
-      toast.success("Receipt downloaded");
-    } catch (error) {
-      console.error("Error downloading receipt:", error);
-      toast.error("Failed to download receipt");
     }
   };
 
@@ -364,14 +316,6 @@ Thank you for your booking!
                   </td>
                   <td className="p-2 md:p-3 lg:p-4">
                     <div className="flex gap-2 whitespace-nowrap">
-                      <button
-                        onClick={() => handleDownloadReceipt(booking)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded transition flex items-center gap-1.5 text-xs flex-shrink-0"
-                        title="Download Receipt"
-                      >
-                        <Download size={14} />
-                        <span>Receipt</span>
-                      </button>
                       <button
                         onClick={() => setDeleteConfirm(booking._id)}
                         className="bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded transition flex items-center gap-1.5 text-xs flex-shrink-0"
