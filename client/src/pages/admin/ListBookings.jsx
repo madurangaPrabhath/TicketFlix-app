@@ -139,11 +139,17 @@ Thank you for your booking!
         const movieTitle =
           booking.movieId?.title || booking.movieDetails?.title || "";
         const userId = booking.userId || "";
+        const userUsername = booking.userUsername || "";
+        const userName = booking.userName || "";
+        const userEmail = booking.userEmail || "";
         const theaterName = booking.theater?.name || "";
         const city = booking.theater?.city || "";
 
         return (
           userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          userUsername.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
           movieTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
           theaterName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           city.toLowerCase().includes(searchTerm.toLowerCase())
@@ -273,7 +279,32 @@ Thank you for your booking!
                   className="border-b border-neutral-700 hover:bg-neutral-800/50 transition"
                 >
                   <td className="p-2 md:p-3 lg:p-4 text-white font-medium text-xs sm:text-sm truncate max-w-[110px]">
-                    {booking.userId || "Unknown User"}
+                    {(() => {
+                      const primaryUserLabel =
+                        booking.userUsername || booking.userName || "Unknown User";
+                      const secondaryUserLabel =
+                        booking.userUsername &&
+                        booking.userFullName &&
+                        booking.userFullName !== booking.userUsername
+                          ? booking.userFullName
+                          : null;
+
+                      return (
+                    <div className="flex flex-col">
+                      <span className="text-white font-medium truncate">
+                        {primaryUserLabel}
+                      </span>
+                      {secondaryUserLabel && (
+                        <span className="text-gray-500 text-[11px] sm:text-xs truncate">
+                          {secondaryUserLabel}
+                        </span>
+                      )}
+                      <span className="text-gray-400 text-[11px] sm:text-xs truncate">
+                        {booking.userId || "No User ID"}
+                      </span>
+                    </div>
+                      );
+                    })()}
                   </td>
                   <td className="p-2 md:p-3 lg:p-4 text-gray-300 text-xs sm:text-sm truncate max-w-[150px]">
                     {booking.movieId?.title ||

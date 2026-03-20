@@ -2,7 +2,47 @@ import Movie from "../models/Movie.js";
 import Show from "../models/Show.js";
 import Booking from "../models/Booking.js";
 import User from "../models/User.js";
+import { clerkClient } from "@clerk/clerk-sdk-node";
 import { notifyUsersForShow } from "../utils/notificationService.js";
+
+const getPrimaryClerkEmail = (clerkUser) => {
+  if (!clerkUser) return null;
+
+  if (clerkUser.primaryEmailAddress?.emailAddress) {
+    return clerkUser.primaryEmailAddress.emailAddress;
+  }
+
+  if (Array.isArray(clerkUser.emailAddresses) && clerkUser.emailAddresses.length > 0) {
+    return clerkUser.emailAddresses[0]?.emailAddress || null;
+  }
+
+  return null;
+};
+
+const getClerkDisplayName = (clerkUser) => {
+  if (!clerkUser) return null;
+
+  const firstName = clerkUser.firstName || "";
+  const lastName = clerkUser.lastName || "";
+  const fullName = `${firstName} ${lastName}`.trim();
+
+  return fullName || null;
+};
+
+const getClerkUsername = (clerkUser) => {
+  if (!clerkUser) return null;
+
+  if (clerkUser.username) {
+    return clerkUser.username;
+  }
+
+  const email = getPrimaryClerkEmail(clerkUser);
+  if (email && email.includes("@")) {
+    return email.split("@")[0];
+  }
+
+  return null;
+};
 
 export const getDashboardStats = async (req, res) => {
   try {
@@ -291,11 +331,53 @@ export const getAllBookings = async (req, res) => {
       .limit(parseInt(limit))
       .sort({ bookingDate: -1, createdAt: -1 });
 
+    const uniqueUserIds = [
+      ...new Set(bookings.map((booking) => booking.userId).filter(Boolean)),
+    ];
+    const users = await User.find(
+      { _id: { $in: uniqueUserIds } },
+      { _id: 1, name: 1, email: 1 }
+    );
+    const userMap = new Map(users.map((user) => [String(user._id), user]));
+
+    const clerkUserEntries = await Promise.all(
+      uniqueUserIds.map(async (id) => {
+        try {
+          const clerkUser = await clerkClient.users.getUser(id);
+          return [id, clerkUser];
+        } catch {
+          return [id, null];
+        }
+      })
+    );
+    const clerkUserMap = new Map(clerkUserEntries);
+
+    const bookingsWithUserInfo = bookings.map((booking) => {
+      const bookingUserId = String(booking.userId || "");
+      const user = userMap.get(bookingUserId);
+      const clerkUser = clerkUserMap.get(bookingUserId);
+      const bookingObj = booking.toObject();
+
+      const clerkUsername = getClerkUsername(clerkUser);
+      const clerkName = getClerkDisplayName(clerkUser);
+      const localName = user?.name || null;
+      const localEmail = user?.email || null;
+      const clerkEmail = getPrimaryClerkEmail(clerkUser);
+
+      return {
+        ...bookingObj,
+        userName: clerkUsername || localName || clerkName,
+        userUsername: clerkUsername,
+        userFullName: localName || clerkName,
+        userEmail: localEmail || clerkEmail,
+      };
+    });
+
     const total = await Booking.countDocuments(filter);
 
     res.status(200).json({
       success: true,
-      data: bookings,
+      data: bookingsWithUserInfo,
       pagination: {
         total,
         page: parseInt(page),
