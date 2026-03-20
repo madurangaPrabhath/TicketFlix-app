@@ -14,6 +14,7 @@ const ListBookings = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [acceptingBookingId, setAcceptingBookingId] = useState(null);
+  const [rejectingBookingId, setRejectingBookingId] = useState(null);
 
   const formatDateTime = (dateStr, timeStr) => {
     if (!dateStr) return "N/A";
@@ -106,6 +107,35 @@ const ListBookings = () => {
       toast.error(error.response?.data?.message || "Failed to verify bank transfer");
     } finally {
       setAcceptingBookingId(null);
+    }
+  };
+
+  const handleRejectBankTransfer = async (bookingId) => {
+    try {
+      setRejectingBookingId(bookingId);
+      const updatedBooking = await reviewBankTransferBooking(bookingId, "rejected");
+
+      if (!updatedBooking) {
+        toast.error("Failed to reject bank transfer");
+        return;
+      }
+
+      setBookings((prev) =>
+        prev.map((booking) =>
+          booking._id === bookingId ? { ...booking, ...updatedBooking } : booking
+        )
+      );
+      setFilteredBookings((prev) =>
+        prev.map((booking) =>
+          booking._id === bookingId ? { ...booking, ...updatedBooking } : booking
+        )
+      );
+      toast.success("Bank transfer rejected successfully");
+    } catch (error) {
+      console.error("Error rejecting bank transfer:", error);
+      toast.error(error.response?.data?.message || "Failed to reject bank transfer");
+    } finally {
+      setRejectingBookingId(null);
     }
   };
 
@@ -361,23 +391,46 @@ const ListBookings = () => {
                     </div>
                   </td>
                   <td className="p-2 md:p-3 lg:p-4">
-                    <div className="flex gap-2 whitespace-nowrap">
+                    <div className="flex flex-col gap-2 min-w-[110px]">
                       {isPendingBankTransfer(booking) && (
-                        <button
-                          onClick={() => handleAcceptBankTransfer(booking._id)}
-                          disabled={acceptingBookingId === booking._id}
-                          className="bg-green-600 hover:bg-green-700 disabled:bg-green-800/70 disabled:cursor-not-allowed text-white px-2.5 py-1.5 rounded transition flex items-center gap-1.5 text-xs flex-shrink-0"
-                          title="Accept Bank Transfer"
-                        >
-                          <CheckCircle size={14} />
-                          <span>
-                            {acceptingBookingId === booking._id ? "Accepting..." : "Accept"}
-                          </span>
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleAcceptBankTransfer(booking._id)}
+                            disabled={
+                              acceptingBookingId === booking._id ||
+                              rejectingBookingId === booking._id
+                            }
+                            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-800/70 disabled:cursor-not-allowed text-white px-2.5 py-1.5 rounded transition flex items-center justify-center gap-1.5 text-xs"
+                            title="Accept Bank Transfer"
+                          >
+                            <CheckCircle size={14} />
+                            <span>
+                              {acceptingBookingId === booking._id
+                                ? "Accepting..."
+                                : "Accept"}
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => handleRejectBankTransfer(booking._id)}
+                            disabled={
+                              rejectingBookingId === booking._id ||
+                              acceptingBookingId === booking._id
+                            }
+                            className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-orange-800/70 disabled:cursor-not-allowed text-white px-2.5 py-1.5 rounded transition flex items-center justify-center gap-1.5 text-xs"
+                            title="Reject Bank Transfer"
+                          >
+                            <Clock size={14} />
+                            <span>
+                              {rejectingBookingId === booking._id
+                                ? "Rejecting..."
+                                : "Reject"}
+                            </span>
+                          </button>
+                        </>
                       )}
                       <button
                         onClick={() => setDeleteConfirm(booking._id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded transition flex items-center gap-1.5 text-xs flex-shrink-0"
+                        className="w-full bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded transition flex items-center justify-center gap-1.5 text-xs"
                         title="Delete Booking"
                       >
                         <Trash2 size={14} />
