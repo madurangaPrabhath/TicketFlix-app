@@ -37,6 +37,21 @@ const SeatLayout = () => {
     return "standard";
   };
 
+  const getDateKey = (value) => {
+    if (!value) return null;
+
+    if (typeof value === "string") {
+      const normalized = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (normalized) {
+        return `${normalized[1]}-${normalized[2]}-${normalized[3]}`;
+      }
+    }
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return parsed.toISOString().split("T")[0];
+  };
+
   const getSeatPrice = (seatNumber) => {
     if (!selectedTime) return 0;
 
@@ -79,13 +94,6 @@ const SeatLayout = () => {
       console.log("Available times:", times);
       setAvailableTimes(times);
       setShows(showsData);
-
-      if (!selectedDate && showsData.length > 0) {
-        const firstShowDate = new Date(showsData[0].showDate)
-          .toISOString()
-          .split("T")[0];
-        setSelectedDate(firstShowDate);
-      }
 
       setLoading(false);
     } catch (error) {
@@ -134,20 +142,33 @@ const SeatLayout = () => {
   };
 
   useEffect(() => {
-    if (date) {
-      setSelectedDate(date);
-    } else if (location.state?.selectedDate) {
-      setSelectedDate(location.state.selectedDate);
+    const preselectedDate = getDateKey(date || location.state?.selectedDate);
+
+    if (preselectedDate) {
+      setSelectedDate(preselectedDate);
+    } else if (shows.length > 0) {
+      const firstShowDate = getDateKey(shows[0].showDate);
+      if (firstShowDate) setSelectedDate(firstShowDate);
     }
+
     window.scrollTo(0, 0);
-  }, [date, location.state]);
+  }, [date, location.state?.selectedDate, shows]);
 
   const formatDate = (dateString) => {
     try {
-      const date = new Date(dateString);
-      const day = date.getDate();
-      const month = date.toLocaleDateString("en-US", { month: "short" });
-      const weekday = date.toLocaleDateString("en-US", { weekday: "short" });
+      const normalized = getDateKey(dateString);
+      if (!normalized) throw new Error("Invalid date");
+
+      const [year, monthNumber, day] = normalized.split("-").map(Number);
+      const utcDate = new Date(Date.UTC(year, monthNumber - 1, day));
+      const month = utcDate.toLocaleDateString("en-US", {
+        month: "short",
+        timeZone: "UTC",
+      });
+      const weekday = utcDate.toLocaleDateString("en-US", {
+        weekday: "short",
+        timeZone: "UTC",
+      });
       return { day, month, weekday };
     } catch (error) {
       console.error("Error formatting date:", error);
@@ -311,9 +332,7 @@ const SeatLayout = () => {
                   </div>
                 ) : availableTimes.filter((item) => {
                     if (!selectedDate) return true;
-                    const itemDate = new Date(item.showDate)
-                      .toISOString()
-                      .split("T")[0];
+                    const itemDate = getDateKey(item.showDate);
                     return itemDate === selectedDate;
                   }).length === 0 ? (
                   <div className="col-span-full text-center py-8">
@@ -328,9 +347,7 @@ const SeatLayout = () => {
                   availableTimes
                     .filter((item) => {
                       if (!selectedDate) return true;
-                      const itemDate = new Date(item.showDate)
-                        .toISOString()
-                        .split("T")[0];
+                      const itemDate = getDateKey(item.showDate);
                       return itemDate === selectedDate;
                     })
                     .map((item) => (
