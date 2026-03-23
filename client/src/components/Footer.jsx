@@ -41,16 +41,30 @@ const Footer = () => {
               </p>
 
               <div className="flex items-center gap-3 flex-wrap">
-                <img
-                  src={assets.googlePlay}
-                  alt="Get it on Google Play"
-                  className="h-10 w-auto cursor-pointer transition-transform duration-300 hover:scale-105"
-                />
-                <img
-                  src={assets.appStore}
-                  alt="Download on App Store"
-                  className="h-10 w-auto cursor-pointer transition-transform duration-300 hover:scale-105"
-                />
+                <a
+                  href="https://play.google.com/store"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Open Google Play Store"
+                >
+                  <img
+                    src={assets.googlePlay}
+                    alt="Get it on Google Play"
+                    className="h-10 w-auto cursor-pointer transition-transform duration-300 hover:scale-105"
+                  />
+                </a>
+                <a
+                  href="https://www.apple.com/app-store/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Open Apple App Store"
+                >
+                  <img
+                    src={assets.appStore}
+                    alt="Download on App Store"
+                    className="h-10 w-auto cursor-pointer transition-transform duration-300 hover:scale-105"
+                  />
+                </a>
               </div>
             </div>
 
@@ -146,28 +160,36 @@ const Footer = () => {
                 </h4>
                 <div className="flex items-center gap-3">
                   <a
-                    href="#facebook"
+                    href="https://www.facebook.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="w-9 h-9 bg-neutral-800 hover:bg-red-600 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
                     aria-label="Facebook"
                   >
                     <Facebook className="w-4 h-4 text-white" />
                   </a>
                   <a
-                    href="#twitter"
+                    href="https://x.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="w-9 h-9 bg-neutral-800 hover:bg-red-600 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
                     aria-label="Twitter"
                   >
                     <Twitter className="w-4 h-4 text-white" />
                   </a>
                   <a
-                    href="#instagram"
+                    href="https://www.instagram.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="w-9 h-9 bg-neutral-800 hover:bg-red-600 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
                     aria-label="Instagram"
                   >
                     <Instagram className="w-4 h-4 text-white" />
                   </a>
                   <a
-                    href="#youtube"
+                    href="https://www.youtube.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="w-9 h-9 bg-neutral-800 hover:bg-red-600 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
                     aria-label="YouTube"
                   >
