@@ -149,21 +149,31 @@ const Theaters = () => {
   const [selectedCity, setSelectedCity] = useState("All Cities");
 
   useEffect(() => {
+    let isMounted = true;
+
     const loadTheaters = async () => {
       try {
         setIsLoading(true);
         const upcomingShows = await fetchUpcomingShows();
         const generatedTheaters = buildTheaterCards(upcomingShows || []);
-        setTheaters(
-          generatedTheaters.length > 0 ? generatedTheaters : SAMPLE_THEATERS
-        );
+        if (isMounted) {
+          setTheaters(
+            generatedTheaters.length > 0 ? generatedTheaters : SAMPLE_THEATERS
+          );
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
 
     loadTheaters();
-  }, [fetchUpcomingShows]);
+
+    return () => {
+      isMounted = false;
+    };
+    // Intentionally load once to avoid refetch loop from changing context function refs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const cityOptions = useMemo(() => {
     return [
