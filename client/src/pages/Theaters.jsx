@@ -1,15 +1,20 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  Building2,
-  CalendarDays,
-  ChevronRight,
-  Clock3,
-  Film,
-  MapPin,
-  Search,
-} from "lucide-react";
+import { Building2, ChevronRight, MapPin, Search } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
+
+const buildSeatDetails = (totalSeats = 0) => {
+  const safeTotal = Math.max(Number(totalSeats) || 0, 0);
+  const vipSeats = Math.round(safeTotal * 0.15);
+  const premiumSeats = Math.round(safeTotal * 0.35);
+  const standardSeats = Math.max(safeTotal - vipSeats - premiumSeats, 0);
+
+  return [
+    { label: "VIP Seats", value: vipSeats },
+    { label: "Premium Seats", value: premiumSeats },
+    { label: "Standard Seats", value: standardSeats },
+  ];
+};
 
 const SAMPLE_THEATERS = [
   {
@@ -18,9 +23,11 @@ const SAMPLE_THEATERS = [
     city: "Colombo",
     location: "Liberty Plaza, Kollupitiya",
     formats: ["2D", "3D", "IMAX"],
-    movieCount: 12,
-    showCount: 44,
-    nextShowDate: new Date(Date.now() + 2 * 60 * 60 * 1000),
+    seatDetails: [
+      { label: "VIP Seats", value: 48 },
+      { label: "Premium Seats", value: 120 },
+      { label: "Standard Seats", value: 180 },
+    ],
   },
   {
     id: "sample-kandy-scope",
@@ -28,9 +35,11 @@ const SAMPLE_THEATERS = [
     city: "Kandy",
     location: "City Centre, Dalada Veediya",
     formats: ["2D", "3D"],
-    movieCount: 9,
-    showCount: 31,
-    nextShowDate: new Date(Date.now() + 3 * 60 * 60 * 1000),
+    seatDetails: [
+      { label: "VIP Seats", value: 36 },
+      { label: "Premium Seats", value: 96 },
+      { label: "Standard Seats", value: 140 },
+    ],
   },
   {
     id: "sample-kandy-cinex",
@@ -38,9 +47,11 @@ const SAMPLE_THEATERS = [
     city: "Kandy",
     location: "Peradeniya Road",
     formats: ["2D"],
-    movieCount: 7,
-    showCount: 20,
-    nextShowDate: new Date(Date.now() + 5 * 60 * 60 * 1000),
+    seatDetails: [
+      { label: "VIP Seats", value: 24 },
+      { label: "Premium Seats", value: 70 },
+      { label: "Standard Seats", value: 110 },
+    ],
   },
   {
     id: "sample-kurunegala",
@@ -48,9 +59,11 @@ const SAMPLE_THEATERS = [
     city: "Kurunegala",
     location: "Kandy Road, Kurunegala",
     formats: ["2D", "3D"],
-    movieCount: 8,
-    showCount: 24,
-    nextShowDate: new Date(Date.now() + 4 * 60 * 60 * 1000),
+    seatDetails: [
+      { label: "VIP Seats", value: 30 },
+      { label: "Premium Seats", value: 80 },
+      { label: "Standard Seats", value: 130 },
+    ],
   },
   {
     id: "sample-gampaha",
@@ -58,9 +71,11 @@ const SAMPLE_THEATERS = [
     city: "Gampaha",
     location: "Main Street, Gampaha",
     formats: ["2D", "3D"],
-    movieCount: 6,
-    showCount: 18,
-    nextShowDate: new Date(Date.now() + 6 * 60 * 60 * 1000),
+    seatDetails: [
+      { label: "VIP Seats", value: 26 },
+      { label: "Premium Seats", value: 76 },
+      { label: "Standard Seats", value: 120 },
+    ],
   },
   {
     id: "sample-anuradhapura",
@@ -68,9 +83,11 @@ const SAMPLE_THEATERS = [
     city: "Anuradhapura",
     location: "Stage II, New Town",
     formats: ["2D"],
-    movieCount: 5,
-    showCount: 14,
-    nextShowDate: new Date(Date.now() + 7 * 60 * 60 * 1000),
+    seatDetails: [
+      { label: "VIP Seats", value: 20 },
+      { label: "Premium Seats", value: 62 },
+      { label: "Standard Seats", value: 98 },
+    ],
   },
   {
     id: "sample-negombo",
@@ -78,9 +95,11 @@ const SAMPLE_THEATERS = [
     city: "Negombo",
     location: "Beach Road, Negombo",
     formats: ["2D", "3D"],
-    movieCount: 7,
-    showCount: 22,
-    nextShowDate: new Date(Date.now() + 2.5 * 60 * 60 * 1000),
+    seatDetails: [
+      { label: "VIP Seats", value: 28 },
+      { label: "Premium Seats", value: 84 },
+      { label: "Standard Seats", value: 126 },
+    ],
   },
   {
     id: "sample-galle",
@@ -88,9 +107,11 @@ const SAMPLE_THEATERS = [
     city: "Galle",
     location: "Old Matara Road, Galle",
     formats: ["2D", "3D"],
-    movieCount: 8,
-    showCount: 27,
-    nextShowDate: new Date(Date.now() + 3.5 * 60 * 60 * 1000),
+    seatDetails: [
+      { label: "VIP Seats", value: 32 },
+      { label: "Premium Seats", value: 92 },
+      { label: "Standard Seats", value: 136 },
+    ],
   },
 ];
 
@@ -114,6 +135,7 @@ const buildTheaterCards = (shows = []) => {
         movies: new Set(),
         showCount: 0,
         nextShowDate: showDate,
+        seatCapacity: Number(show?.seats?.total) || 150,
       });
     }
 
@@ -122,6 +144,10 @@ const buildTheaterCards = (shows = []) => {
     theaterEntry.showCount += 1;
     if (show?.format) theaterEntry.formats.add(show.format);
     if (show?.movieDetails?.title) theaterEntry.movies.add(show.movieDetails.title);
+    theaterEntry.seatCapacity = Math.max(
+      theaterEntry.seatCapacity,
+      Number(show?.seats?.total) || 0
+    );
 
     if (
       showDate &&
@@ -136,6 +162,7 @@ const buildTheaterCards = (shows = []) => {
       ...item,
       formats: Array.from(item.formats),
       movieCount: item.movies.size,
+      seatDetails: buildSeatDetails(item.seatCapacity),
     }))
     .sort((a, b) => a.city.localeCompare(b.city) || a.name.localeCompare(b.name));
 };
@@ -171,8 +198,6 @@ const Theaters = () => {
     return () => {
       isMounted = false;
     };
-    // Intentionally load once to avoid refetch loop from changing context function refs.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const cityOptions = useMemo(() => {
@@ -195,17 +220,6 @@ const Theaters = () => {
       return matchesSearch && matchesCity;
     });
   }, [theaters, searchQuery, selectedCity]);
-
-  const formatNextShow = (date) => {
-    if (!date) return "No showtimes available";
-
-    return new Date(date).toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  };
 
   return (
     <div className="min-h-screen bg-black pt-20 pb-16">
@@ -310,35 +324,17 @@ const Theaters = () => {
                   </div>
 
                   <div className="space-y-3 mb-5">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500 flex items-center gap-2">
-                        <Film className="w-4 h-4" />
-                        Movies Running
-                      </span>
-                      <span className="text-white font-semibold">
-                        {theater.movieCount}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500 flex items-center gap-2">
-                        <CalendarDays className="w-4 h-4" />
-                        Total Shows
-                      </span>
-                      <span className="text-white font-semibold">
-                        {theater.showCount}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500 flex items-center gap-2">
-                        <Clock3 className="w-4 h-4" />
-                        Next Showtime
-                      </span>
-                      <span className="text-white font-semibold text-right">
-                        {formatNextShow(theater.nextShowDate)}
-                      </span>
-                    </div>
+                    {(theater.seatDetails || []).map((detail) => (
+                      <div
+                        key={`${theater.id}-${detail.label}`}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <span className="text-gray-500">{detail.label}</span>
+                        <span className="text-white font-semibold">
+                          {detail.value}
+                        </span>
+                      </div>
+                    ))}
                   </div>
 
                   <div className="flex flex-wrap gap-2">
