@@ -11,6 +11,89 @@ import {
 } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 
+const SAMPLE_THEATERS = [
+  {
+    id: "sample-colombo-premier",
+    name: "Colombo Premier Cinemas",
+    city: "Colombo",
+    location: "Liberty Plaza, Kollupitiya",
+    formats: ["2D", "3D", "IMAX"],
+    movieCount: 12,
+    showCount: 44,
+    nextShowDate: new Date(Date.now() + 2 * 60 * 60 * 1000),
+  },
+  {
+    id: "sample-kandy-scope",
+    name: "Kandy Scope Multiplex",
+    city: "Kandy",
+    location: "City Centre, Dalada Veediya",
+    formats: ["2D", "3D"],
+    movieCount: 9,
+    showCount: 31,
+    nextShowDate: new Date(Date.now() + 3 * 60 * 60 * 1000),
+  },
+  {
+    id: "sample-kandy-cinex",
+    name: "CineX Kandy",
+    city: "Kandy",
+    location: "Peradeniya Road",
+    formats: ["2D"],
+    movieCount: 7,
+    showCount: 20,
+    nextShowDate: new Date(Date.now() + 5 * 60 * 60 * 1000),
+  },
+  {
+    id: "sample-kurunegala",
+    name: "Kurunegala CineHub",
+    city: "Kurunegala",
+    location: "Kandy Road, Kurunegala",
+    formats: ["2D", "3D"],
+    movieCount: 8,
+    showCount: 24,
+    nextShowDate: new Date(Date.now() + 4 * 60 * 60 * 1000),
+  },
+  {
+    id: "sample-gampaha",
+    name: "Gampaha Silver Screen",
+    city: "Gampaha",
+    location: "Main Street, Gampaha",
+    formats: ["2D", "3D"],
+    movieCount: 6,
+    showCount: 18,
+    nextShowDate: new Date(Date.now() + 6 * 60 * 60 * 1000),
+  },
+  {
+    id: "sample-anuradhapura",
+    name: "Anuradhapura Regal",
+    city: "Anuradhapura",
+    location: "Stage II, New Town",
+    formats: ["2D"],
+    movieCount: 5,
+    showCount: 14,
+    nextShowDate: new Date(Date.now() + 7 * 60 * 60 * 1000),
+  },
+  {
+    id: "sample-negombo",
+    name: "Negombo Oceanview Cinemas",
+    city: "Negombo",
+    location: "Beach Road, Negombo",
+    formats: ["2D", "3D"],
+    movieCount: 7,
+    showCount: 22,
+    nextShowDate: new Date(Date.now() + 2.5 * 60 * 60 * 1000),
+  },
+  {
+    id: "sample-galle",
+    name: "Galle Fort Cineplex",
+    city: "Galle",
+    location: "Old Matara Road, Galle",
+    formats: ["2D", "3D"],
+    movieCount: 8,
+    showCount: 27,
+    nextShowDate: new Date(Date.now() + 3.5 * 60 * 60 * 1000),
+  },
+];
+
 const buildTheaterCards = (shows = []) => {
   const groupedTheaters = new Map();
 
@@ -70,7 +153,10 @@ const Theaters = () => {
       try {
         setIsLoading(true);
         const upcomingShows = await fetchUpcomingShows();
-        setTheaters(buildTheaterCards(upcomingShows || []));
+        const generatedTheaters = buildTheaterCards(upcomingShows || []);
+        setTheaters(
+          generatedTheaters.length > 0 ? generatedTheaters : SAMPLE_THEATERS
+        );
       } finally {
         setIsLoading(false);
       }
