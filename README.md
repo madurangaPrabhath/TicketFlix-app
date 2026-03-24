@@ -73,6 +73,22 @@ TicketFlix-app/
 5. Stripe payment intents are created and confirmed on backend.
 6. Inngest functions sync Clerk user events (`created`, `updated`, `deleted`) into MongoDB user records.
 
+## 📸 Screenshots
+
+> Place screenshot files in `docs/screenshots/` using the names below.
+
+| Home | Movies |
+|------|--------|
+| ![TicketFlix Home](docs/screenshots/home-page.png) | ![TicketFlix Movies](docs/screenshots/movies-page.png) |
+
+| Theaters | My Bookings |
+|----------|-------------|
+| ![TicketFlix Theaters](docs/screenshots/theaters-page.png) | ![TicketFlix My Bookings](docs/screenshots/my-bookings-page.png) |
+
+| Admin Dashboard |
+|-----------------|
+| ![TicketFlix Admin Dashboard](docs/screenshots/admin-dashboard.png) |
+
 ## 🚀 Getting Started
 
 ### 1. ✅ Prerequisites
