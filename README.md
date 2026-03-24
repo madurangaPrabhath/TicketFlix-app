@@ -75,18 +75,20 @@ TicketFlix-app/
 
 ## 📸 Screenshots
 
+| Home |
+<img width="1353" height="626" alt="TicketFlix_Home" src="https://github.com/user-attachments/assets/d22270ae-1390-4487-a889-2e718565127f" />
 
-| Home | Movies |
-|------|--------|
-| ![TicketFlix Home](outputs/TicketFlix_Home.png) | ![TicketFlix Movies](outputs/Movie_Page.png) |
+| Movies |
+<img width="1355" height="619" alt="Movie_Page" src="https://github.com/user-attachments/assets/e400cc6b-bb9b-4d75-9183-e4082d19d145" />
 
-| Theaters | My Bookings |
-|----------|-------------|
-| ![TicketFlix Theaters](outputs/Theaters_Page.png) | ![TicketFlix My Bookings](outputs/Booking%20_Page.png) |
+| Theaters |
+<img width="1352" height="628" alt="Theaters_Page" src="https://github.com/user-attachments/assets/50209ab1-17e4-40af-a281-96269c1fac24" />
+
+| My Bookings |
+<img width="1355" height="628" alt="Booking _Page" src="https://github.com/user-attachments/assets/963667c1-4c0a-4a71-93c2-db1a16f26eaa" />
 
 | Admin Dashboard |
-|-----------------|
-| ![TicketFlix Admin Dashboard](outputs/Admin_Page.png) |
+<img width="1350" height="629" alt="Admin_Page" src="https://github.com/user-attachments/assets/ff2036bf-c026-4fae-86e7-3094c650fb9d" />
 
 ## 🚀 Getting Started
 
