@@ -75,19 +75,18 @@ TicketFlix-app/
 
 ## 📸 Screenshots
 
-> Place screenshot files in `docs/screenshots/` using the names below.
 
 | Home | Movies |
 |------|--------|
-| ![TicketFlix Home](docs/screenshots/home-page.png) | ![TicketFlix Movies](docs/screenshots/movies-page.png) |
+| ![TicketFlix Home](outputs/TicketFlix_Home.png) | ![TicketFlix Movies](outputs/Movie_Page.png) |
 
 | Theaters | My Bookings |
 |----------|-------------|
-| ![TicketFlix Theaters](docs/screenshots/theaters-page.png) | ![TicketFlix My Bookings](docs/screenshots/my-bookings-page.png) |
+| ![TicketFlix Theaters](outputs/Theaters_Page.png) | ![TicketFlix My Bookings](outputs/Booking%20_Page.png) |
 
 | Admin Dashboard |
 |-----------------|
-| ![TicketFlix Admin Dashboard](docs/screenshots/admin-dashboard.png) |
+| ![TicketFlix Admin Dashboard](outputs/Admin_Page.png) |
 
 ## 🚀 Getting Started
 
